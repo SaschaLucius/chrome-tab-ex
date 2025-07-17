@@ -56,12 +56,12 @@ function TestRemoveSecondLevelDomain() {
     },
     {
       name: "removed 2",
-      domain: "example.com.uk",
+      domain: "example.co.uk",
       expect: { removed: true, result: "example" },
     },
     {
       name: "removed 3",
-      domain: "example.co.ru",
+      domain: "example.net.au",
       expect: { removed: true, result: "example" },
     },
   ];
