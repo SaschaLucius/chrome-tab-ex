@@ -112,3 +112,98 @@ export function ungroupTabs(tabsIDs: number[]): void {
 export function removeTab(tabID: number): void {
   chrome.tabs.remove(tabID);
 }
+
+/**
+ * getAllWindows gets all browser windows
+ * @returns Promise<chrome.windows.Window[]>
+ */
+export function getAllWindows(): Promise<chrome.windows.Window[]> {
+  return chrome.windows.getAll({ populate: true, windowTypes: ["normal"] });
+}
+
+/**
+ * getCurrentWindow gets the current window
+ * @returns Promise<chrome.windows.Window>
+ */
+export function getCurrentWindow(): Promise<chrome.windows.Window> {
+  return chrome.windows.getCurrent({ populate: true });
+}
+
+/**
+ * moveTabsToWindow moves tabs to a specific window
+ * @param tabIds Array of tab IDs to move
+ * @param windowId Target window ID
+ * @returns Promise<chrome.tabs.Tab[]>
+ */
+export function moveTabsToWindow(
+  tabIds: number[],
+  windowId: number
+): Promise<chrome.tabs.Tab[]> {
+  return chrome.tabs.move(tabIds, { windowId: windowId, index: -1 });
+}
+
+/**
+ * closeWindow closes a browser window
+ * @param windowId Window ID to close
+ * @returns Promise<void>
+ */
+export function closeWindow(windowId: number): Promise<void> {
+  return chrome.windows.remove(windowId);
+}
+
+/**
+ * mergeAllWindows merges all browser windows into the current window
+ */
+export async function mergeAllWindows(): Promise<void> {
+  try {
+    const currentWindow = await getCurrentWindow();
+    const allWindows = await getAllWindows();
+
+    // Filter out the current window
+    const otherWindows = allWindows.filter(
+      (window) => window.id !== currentWindow.id
+    );
+
+    if (otherWindows.length === 0) {
+      console.log("No other windows to merge");
+      return;
+    }
+
+    // Collect all tabs from other windows
+    const tabsToMove: number[] = [];
+    const windowsToClose: number[] = [];
+
+    for (const window of otherWindows) {
+      if (window.tabs && window.id) {
+        // Collect all non-pinned tab IDs from this window
+        const tabIds = window.tabs
+          .filter((tab) => tab.id !== undefined && !tab.pinned)
+          .map((tab) => tab.id as number);
+
+        tabsToMove.push(...tabIds);
+        windowsToClose.push(window.id);
+      }
+    }
+
+    // Move all tabs to current window
+    if (tabsToMove.length > 0 && currentWindow.id) {
+      await moveTabsToWindow(tabsToMove, currentWindow.id);
+    }
+
+    // Close empty windows
+    for (const windowId of windowsToClose) {
+      try {
+        await closeWindow(windowId);
+      } catch (error) {
+        console.warn(`Failed to close window ${windowId}:`, error);
+      }
+    }
+
+    console.log(
+      `Merged ${tabsToMove.length} tabs from ${windowsToClose.length} windows`
+    );
+  } catch (error) {
+    console.error("Error merging windows:", error);
+    throw error;
+  }
+}

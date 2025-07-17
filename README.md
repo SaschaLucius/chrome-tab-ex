@@ -1,5 +1,4 @@
-chrome-tab-ex
-===
+# chrome-tab-ex
 
 This is a Chrome extension that sorts and groups tabs.
 
@@ -10,6 +9,7 @@ This is a Chrome extension that sorts and groups tabs.
 - Group tabs by domain ignore sub-domain
 - Ungroup all tab-groups
 - Remove duplicated tabs
+- Merge all browser windows into the current window
 
 # Development
 
@@ -39,6 +39,7 @@ npm install
 ### 3. Build the Extension
 
 #### Production Build
+
 To create a production-ready build:
 
 ```bash
@@ -46,12 +47,14 @@ npm run build
 ```
 
 This will:
+
 - Compile TypeScript files from `src/` to JavaScript
 - Bundle the code using Webpack
 - Copy static files from `public/` to `dist/`
 - Create a `dist/` directory with the complete extension
 
 #### Development Build (Watch Mode)
+
 For development with automatic rebuilding on file changes:
 
 ```bash
@@ -85,7 +88,7 @@ chrome-tab-ex/
 ├── src/                    # TypeScript source files
 │   ├── groupTabs.ts       # Main extension logic
 │   ├── chromeTabGroups.ts # Tab grouping functionality
-│   ├── chromeTabs.ts      # Tab management utilities
+│   ├── chromeTabs.ts      # Tab and window management utilities
 │   ├── tld.ts            # Top-level domain utilities
 │   └── url.ts            # URL parsing utilities
 ├── public/                # Static files
@@ -127,6 +130,7 @@ npm run style
 ## Building for Distribution
 
 1. Run the production build:
+
    ```bash
    npm run clean && npm run build
    ```
@@ -140,10 +144,12 @@ npm run style
 ### Common Issues
 
 1. **Build fails with TypeScript errors**
+
    - Check that all dependencies are installed: `npm install`
    - Ensure TypeScript files have correct syntax and types
 
 2. **Extension doesn't work after loading**
+
    - Check the browser console for JavaScript errors
    - Verify that `manifest.json` has correct permissions
    - Make sure the build completed successfully
@@ -169,4 +175,3 @@ npm run build
 Install this extension from Chrome Web Store.
 
 [Group Tabs - Chrome Web Store](https://chrome.google.com/webstore/detail/group-tabs/cnmcnafaccboidemenkpfnlgfcejijgm/)
-

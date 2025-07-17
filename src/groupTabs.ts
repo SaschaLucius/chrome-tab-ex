@@ -10,6 +10,7 @@ function groupTabs() {
   );
   const ungroupTabs = <HTMLElement>document.getElementById("ungroupTabs");
   const removeDupTabs = <HTMLElement>document.getElementById("removeDupTabs");
+  const mergeWindows = <HTMLElement>document.getElementById("mergeWindows");
   const targetTabConditions: chrome.tabs.QueryInfo = {
     currentWindow: true,
     pinned: false,
@@ -105,6 +106,19 @@ function groupTabs() {
    */
   removeDupTabs.addEventListener("click", async () => {
     removeDuplicatedTabs();
+  });
+
+  /**
+   * action for "Merge All Windows"
+   */
+  mergeWindows.addEventListener("click", async () => {
+    try {
+      await ct.mergeAllWindows();
+      // Close the popup after successful merge
+      window.close();
+    } catch (error) {
+      console.error("Error merging windows:", error);
+    }
   });
 
   const sortTabsByURL = async () => {
