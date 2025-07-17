@@ -35,8 +35,12 @@ export function getDomainName(url: string): string {
     return removeRes.result;
   }
 
-  // Use PSL-based extraction as fallback
-  return tld.extractDomainName(domainName);
+  const lastDotIdx = domainName.lastIndexOf(".");
+  if (lastDotIdx > 0) {
+    domainName = domainName.substr(0, lastDotIdx);
+  }
+
+  return domainName;
 }
 
 /**
@@ -47,24 +51,11 @@ export function getDomainName(url: string): string {
  * @returns
  */
 export function getDomainNameIgnoreSubDomain(url: string): string {
-  let domainName = "";
-  if (url === "") {
-    return domainName;
+  const fullDomainName = getDomainName(url);
+
+  const lastDotIdx = fullDomainName.lastIndexOf(".");
+  if (lastDotIdx < 0) {
+    return fullDomainName;
   }
-
-  const m = url.match(/https?:\/\/(.*)$/);
-  if (m === null || m[1] === undefined || m[1] === "") {
-    return domainName;
-  }
-  domainName = m[1];
-
-  domainName = domainName.replace(/^www\d?\./i, "");
-
-  const idx = domainName.indexOf("/");
-  if (idx > 0) {
-    domainName = domainName.substr(0, idx);
-  }
-
-  // Use PSL-based extraction to get just the SLD
-  return tld.extractDomainNameIgnoreSubdomain(domainName);
+  return fullDomainName.substr(lastDotIdx + 1);
 }

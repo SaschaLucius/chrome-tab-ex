@@ -1,155 +1,358 @@
-import * as psl from "psl";
+const ATTRIBUTE_TYPE_DOMAIN_JP: string[] = [
+  ".or",
+  ".ed",
+  ".go",
+  ".lg",
+  ".hokkaido",
+  ".aomori",
+  ".iwate",
+  ".miyagi",
+  ".akita",
+  ".yamagata",
+  ".fukushima",
+  ".ibaraki",
+  ".tochigi",
+  ".gunma",
+  ".saitama",
+  ".chiba",
+  ".tokyo",
+  ".kanagawa",
+  ".niigata",
+  ".yamanashi",
+  ".nagano",
+  ".toyama",
+  ".ishikawa",
+  ".fukui",
+  ".gifu",
+  ".shizuoka",
+  ".aichi",
+  ".mie",
+  ".shiga",
+  ".kyoto",
+  ".osaka",
+  ".hyogo",
+  ".nara",
+  ".wakayama",
+  ".tottori",
+  ".shimane",
+  ".okayama",
+  ".hiroshima",
+  ".yamaguchi",
+  ".tokushima",
+  ".kagawa",
+  ".ehime",
+  ".kochi",
+  ".fukuoka",
+  ".saga",
+  ".nagasaki",
+  ".kumamoto",
+  ".oita",
+  ".miyazaki",
+  ".kagoshima",
+  ".okinawa",
+];
+
+const CC_TLD_AT_DOAMIN_MAP = new Map<string, string[]>([
+  [".ac", []],
+  [".ad", []],
+  [".ae", []],
+  [".af", []],
+  [".ag", []],
+  [".ai", []],
+  [".al", []],
+  [".am", []],
+  [".an", []],
+  [".ao", []],
+  [".aq", []],
+  [".ar", []],
+  [".as", []],
+  [".at", []],
+  [".au", []],
+  [".aw", []],
+  [".ax", []],
+  [".az", []],
+  [".ba", []],
+  [".bb", []],
+  [".bd", []],
+  [".be", []],
+  [".bf", []],
+  [".bg", []],
+  [".bh", []],
+  [".bi", []],
+  [".bj", []],
+  [".bm", []],
+  [".bn", []],
+  [".bo", []],
+  [".bq", []],
+  [".br", []],
+  [".bs", []],
+  [".bt", []],
+  [".bv", []],
+  [".bw", []],
+  [".by", []],
+  [".bz", []],
+  [".ca", []],
+  [".cc", []],
+  [".cd", []],
+  [".cf", []],
+  [".cg", []],
+  [".ch", []],
+  [".ci", []],
+  [".ck", []],
+  [".cl", []],
+  [".cm", []],
+  [".cn", []],
+  [".co", []],
+  [".cr", []],
+  [".cu", []],
+  [".cv", []],
+  [".cw", []],
+  [".cx", []],
+  [".cy", []],
+  [".cz", []],
+  [".de", []],
+  [".dj", []],
+  [".dk", []],
+  [".dm", []],
+  [".do", []],
+  [".dz", []],
+  [".ec", []],
+  [".ee", []],
+  [".eg", []],
+  [".eh", []],
+  [".er", []],
+  [".es", []],
+  [".et", []],
+  [".eu", []],
+  [".fi", []],
+  [".fj", []],
+  [".fk", []],
+  [".fm", []],
+  [".fo", []],
+  [".fr", []],
+  [".ga", []],
+  [".gb", []],
+  [".gd", []],
+  [".ge", []],
+  [".gf", []],
+  [".gg", []],
+  [".gh", []],
+  [".gi", []],
+  [".gl", []],
+  [".gm", []],
+  [".gn", []],
+  [".gp", []],
+  [".gq", []],
+  [".gr", []],
+  [".gs", []],
+  [".gt", []],
+  [".gu", []],
+  [".gw", []],
+  [".gy", []],
+  [".hk", []],
+  [".hm", []],
+  [".hn", []],
+  [".hr", []],
+  [".ht", []],
+  [".hu", []],
+  [".id", []],
+  [".ie", []],
+  [".il", []],
+  [".im", []],
+  [".in", []],
+  [".io", []],
+  [".iq", []],
+  [".ir", []],
+  [".is", []],
+  [".it", []],
+  [".je", []],
+  [".jm", []],
+  [".jo", []],
+  [".jp", ATTRIBUTE_TYPE_DOMAIN_JP],
+  [".ke", []],
+  [".kg", []],
+  [".kh", []],
+  [".ki", []],
+  [".km", []],
+  [".kn", []],
+  [".kp", []],
+  [".kr", []],
+  [".krd", []],
+  [".kw", []],
+  [".ky", []],
+  [".kz", []],
+  [".la", []],
+  [".lb", []],
+  [".lc", []],
+  [".li", []],
+  [".lk", []],
+  [".lr", []],
+  [".ls", []],
+  [".lt", []],
+  [".lu", []],
+  [".lv", []],
+  [".ly", []],
+  [".ma", []],
+  [".mc", []],
+  [".md", []],
+  [".me", []],
+  [".mg", []],
+  [".mh", []],
+  [".mk", []],
+  [".ml", []],
+  [".mm", []],
+  [".mn", []],
+  [".mo", []],
+  [".mp", []],
+  [".mq", []],
+  [".mr", []],
+  [".ms", []],
+  [".mt", []],
+  [".mu", []],
+  [".mv", []],
+  [".mw", []],
+  [".mx", []],
+  [".my", []],
+  [".mz", []],
+  [".na", []],
+  [".nc", []],
+  [".ne", []],
+  [".nf", []],
+  [".ng", []],
+  [".ni", []],
+  [".nl", []],
+  [".no", []],
+  [".np", []],
+  [".nr", []],
+  [".nu", []],
+  [".nz", []],
+  [".om", []],
+  [".pa", []],
+  [".pe", []],
+  [".pf", []],
+  [".pg", []],
+  [".ph", []],
+  [".pk", []],
+  [".pl", []],
+  [".pm", []],
+  [".pn", []],
+  [".pr", []],
+  [".ps", []],
+  [".pt", []],
+  [".pw", []],
+  [".py", []],
+  [".qa", []],
+  [".re", []],
+  [".ro", []],
+  [".rs", []],
+  [".ru", []],
+  [".rw", []],
+  [".sa", []],
+  [".sb", []],
+  [".sc", []],
+  [".sd", []],
+  [".se", []],
+  [".sg", []],
+  [".sh", []],
+  [".si", []],
+  [".sj", []],
+  [".sk", []],
+  [".sl", []],
+  [".sm", []],
+  [".sn", []],
+  [".so", []],
+  [".sr", []],
+  [".ss", []],
+  [".st", []],
+  [".su", []],
+  [".sv", []],
+  [".sx", []],
+  [".sy", []],
+  [".sz", []],
+  [".tc", []],
+  [".td", []],
+  [".tf", []],
+  [".tg", []],
+  [".th", []],
+  [".tj", []],
+  [".tk", []],
+  [".tl", []],
+  [".tm", []],
+  [".tn", []],
+  [".to", []],
+  [".tp", []],
+  [".tr", []],
+  [".tt", []],
+  [".tv", []],
+  [".tw", []],
+  [".tz", []],
+  [".ua", []],
+  [".ug", []],
+  [".uk", []],
+  [".us", []],
+  [".uy", []],
+  [".uz", []],
+  [".va", []],
+  [".vc", []],
+  [".ve", []],
+  [".vg", []],
+  [".vi", []],
+  [".vn", []],
+  [".vu", []],
+  [".wf", []],
+  [".ws", []],
+  [".ye", []],
+  [".yt", []],
+  [".za", []],
+  [".zm", []],
+  [".zw", []],
+]);
+
+const OriginalTLD: string[] = [
+  ".com",
+  ".org",
+  ".net",
+  ".int",
+  ".edu",
+  ".gov",
+  ".mil",
+];
+
+const TLD: string[] = [...CC_TLD_AT_DOAMIN_MAP.keys()].concat(OriginalTLD);
 
 export type RemoveResult = {
   removed: boolean;
   result: string;
 };
 
-/**
- * Extract the domain name without the public suffix and subdomains
- * This handles both second-level domains (.co.uk) and attribute-type domains (.lg.jp)
- */
-export function extractDomainName(hostname: string): string {
-  try {
-    const parsed = psl.parse(hostname);
-
-    // Check if parsing failed
-    if ("error" in parsed) {
-      // Fallback: just remove the TLD
-      const lastDotIdx = hostname.lastIndexOf(".");
-      if (lastDotIdx > 0) {
-        return hostname.substr(0, lastDotIdx);
-      }
-      return hostname;
-    }
-
-    // For PSL, we want the SLD (second level domain) part
-    // For example: test.example.co.uk -> we want "test.example"
-    // For example.lg.jp -> we want "example"
-
-    if (parsed.subdomain && parsed.sld) {
-      return `${parsed.subdomain}.${parsed.sld}`;
-    } else if (parsed.sld) {
-      return parsed.sld;
-    }
-
-    // Fallback
-    const lastDotIdx = hostname.lastIndexOf(".");
-    if (lastDotIdx > 0) {
-      return hostname.substr(0, lastDotIdx);
-    }
-    return hostname;
-  } catch (error) {
-    // Fallback: just remove the TLD
-    const lastDotIdx = hostname.lastIndexOf(".");
-    if (lastDotIdx > 0) {
-      return hostname.substr(0, lastDotIdx);
-    }
-    return hostname;
-  }
-}
-
-/**
- * Extract just the second level domain (without subdomains)
- */
-export function extractDomainNameIgnoreSubdomain(hostname: string): string {
-  try {
-    const parsed = psl.parse(hostname);
-
-    // Check if parsing failed
-    if ("error" in parsed) {
-      // Fallback: extract last part before TLD
-      const lastDotIdx = hostname.lastIndexOf(".");
-      if (lastDotIdx > 0) {
-        const withoutTld = hostname.substr(0, lastDotIdx);
-        const secondLastDotIdx = withoutTld.lastIndexOf(".");
-        if (secondLastDotIdx > 0) {
-          return withoutTld.substr(secondLastDotIdx + 1);
-        }
-        return withoutTld;
-      }
-      return hostname;
-    }
-
-    // Return just the SLD (second level domain)
-    if (parsed.sld) {
-      return parsed.sld;
-    }
-
-    // Fallback
-    const lastDotIdx = hostname.lastIndexOf(".");
-    if (lastDotIdx > 0) {
-      const withoutTld = hostname.substr(0, lastDotIdx);
-      const secondLastDotIdx = withoutTld.lastIndexOf(".");
-      if (secondLastDotIdx > 0) {
-        return withoutTld.substr(secondLastDotIdx + 1);
-      }
-      return withoutTld;
-    }
-    return hostname;
-  } catch (error) {
-    // Fallback: extract last part before TLD
-    const lastDotIdx = hostname.lastIndexOf(".");
-    if (lastDotIdx > 0) {
-      const withoutTld = hostname.substr(0, lastDotIdx);
-      const secondLastDotIdx = withoutTld.lastIndexOf(".");
-      if (secondLastDotIdx > 0) {
-        return withoutTld.substr(secondLastDotIdx + 1);
-      }
-      return withoutTld;
-    }
-    return hostname;
-  }
-}
-
 export function removeAttributeTypeDomain(domain: string): RemoveResult {
-  try {
-    const parsed = psl.parse(domain);
-
-    // Check if parsing failed
-    if ("error" in parsed) {
-      return { removed: false, result: domain };
-    }
-
-    // Use PSL to determine if this is a multi-part TLD (attribute-type domain)
-    // PSL handles all the complexity of determining valid public suffixes
-    if (parsed.tld && parsed.tld.includes(".") && parsed.sld) {
-      // Return subdomain + SLD if subdomain exists, otherwise just SLD
-      if (parsed.subdomain && parsed.sld) {
-        return { removed: true, result: `${parsed.subdomain}.${parsed.sld}` };
-      } else {
-        return { removed: true, result: parsed.sld };
-      }
-    }
-
-    return { removed: false, result: domain };
-  } catch (error) {
+  const tld = domain.substr(domain.lastIndexOf("."));
+  const attributeDomainList = CC_TLD_AT_DOAMIN_MAP.get(tld);
+  if (attributeDomainList === undefined) {
     return { removed: false, result: domain };
   }
+
+  for (let i = 0; i < attributeDomainList.length; i++) {
+    const localiedAttributeTypeDomain = `${attributeDomainList[i]}${tld}`;
+    if (domain.lastIndexOf(localiedAttributeTypeDomain) > 0) {
+      domain = domain.replace(localiedAttributeTypeDomain, "");
+      return { removed: true, result: domain };
+    }
+  }
+
+  return { removed: false, result: domain };
 }
 
 export function removeSecondLevelDomain(domain: string): RemoveResult {
-  try {
-    const parsed = psl.parse(domain);
+  const tld = domain.substr(domain.lastIndexOf("."));
 
-    // Check if parsing failed
-    if ("error" in parsed) {
-      return { removed: false, result: domain };
+  for (let i = 0; i < TLD.length; i++) {
+    const sld = `${TLD[i]}${tld}`;
+    if (domain.lastIndexOf(sld) > 0) {
+      domain = domain.replace(sld, "");
+      return { removed: true, result: domain };
     }
-
-    // Use PSL to determine if this is a multi-part TLD
-    // PSL handles all the complexity of determining valid public suffixes
-    if (parsed.tld && parsed.tld.includes(".") && parsed.sld) {
-      // Return subdomain + SLD if subdomain exists, otherwise just SLD
-      if (parsed.subdomain && parsed.sld) {
-        return { removed: true, result: `${parsed.subdomain}.${parsed.sld}` };
-      } else {
-        return { removed: true, result: parsed.sld };
-      }
-    }
-
-    return { removed: false, result: domain };
-  } catch (error) {
-    return { removed: false, result: domain };
   }
+
+  return { removed: false, result: domain };
 }
