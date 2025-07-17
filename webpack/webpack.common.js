@@ -11,6 +11,7 @@ module.exports = {
         path: path.join(__dirname, "../dist/js"),
         filename: "[name].js",
     },
+    devtool: false, // Disable eval() for Chrome extension CSP compliance
     optimization: {
         splitChunks: {
             name: "vendor",
@@ -20,6 +21,7 @@ module.exports = {
     module: {
         rules: [
             {
+                test: /\.ts$/,
                 use: "ts-loader",
                 exclude: /node_modules/,
             },
