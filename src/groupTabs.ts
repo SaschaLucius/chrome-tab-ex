@@ -10,6 +10,9 @@ function groupTabs() {
   );
   const ungroupTabs = <HTMLElement>document.getElementById("ungroupTabs");
   const removeDupTabs = <HTMLElement>document.getElementById("removeDupTabs");
+  const removeDupTabsIgnoreParams = <HTMLElement>(
+    document.getElementById("removeDupTabsIgnoreParams")
+  );
   const mergeWindows = <HTMLElement>document.getElementById("mergeWindows");
   const targetTabConditions: chrome.tabs.QueryInfo = {
     currentWindow: true,
@@ -109,6 +112,13 @@ function groupTabs() {
   });
 
   /**
+   * action for "Remove duplicated tabs (ignore URL parameters)"
+   */
+  removeDupTabsIgnoreParams.addEventListener("click", async () => {
+    removeDuplicatedTabsIgnoreParams();
+  });
+
+  /**
    * action for "Merge All Windows"
    */
   mergeWindows.addEventListener("click", async () => {
@@ -194,6 +204,34 @@ function groupTabs() {
         continue;
       }
       exists[t.url] = true;
+    }
+  };
+
+  const removeDuplicatedTabsIgnoreParams = async () => {
+    const tabs = await ct.queryTabs({
+      currentWindow: true,
+      pinned: false,
+      url: ["http://*/*", "https://*/*"],
+    });
+    const exists: { [key: string]: boolean } = {};
+    for (let i = 0; i < tabs.length; i++) {
+      if (tabs[i] === undefined) {
+        continue;
+      }
+      const t = tabs[i];
+      if (t.url === undefined) {
+        continue;
+      }
+      // Get URL without parameters to compare for duplicates
+      const urlWithoutParams = url.getURLWithoutParameters(t.url);
+      if (exists[urlWithoutParams] !== undefined) {
+        if (t.id === undefined) {
+          continue;
+        }
+        ct.removeTab(t.id);
+        continue;
+      }
+      exists[urlWithoutParams] = true;
     }
   };
 }

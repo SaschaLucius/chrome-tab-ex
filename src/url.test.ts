@@ -183,3 +183,52 @@ function TestGetDomainNameIgnoreSubDomain() {
 }
 
 TestGetDomainNameIgnoreSubDomain();
+
+function TestGetURLWithoutParameters() {
+  const cases: Case[] = [
+    {
+      name: "URL without parameters",
+      url: "https://example.com/path",
+      expect: "https://example.com/path",
+    },
+    {
+      name: "URL with query parameters",
+      url: "https://example.com/path?param1=value1&param2=value2",
+      expect: "https://example.com/path",
+    },
+    {
+      name: "URL with hash fragment",
+      url: "https://example.com/path#section",
+      expect: "https://example.com/path",
+    },
+    {
+      name: "URL with both query parameters and hash",
+      url: "https://example.com/path?param=value#section",
+      expect: "https://example.com/path",
+    },
+    {
+      name: "URL with only query parameters",
+      url: "https://example.com/?param=value",
+      expect: "https://example.com/",
+    },
+    {
+      name: "URL with port and parameters",
+      url: "https://example.com:8080/path?param=value",
+      expect: "https://example.com:8080/path",
+    },
+    {
+      name: "empty URL",
+      url: "",
+      expect: "",
+    },
+  ];
+
+  cases.forEach((c) => {
+    test(c.name, () => {
+      const urlWithoutParams = url.getURLWithoutParameters(c.url);
+      expect(urlWithoutParams).toBe(c.expect);
+    });
+  });
+}
+
+TestGetURLWithoutParameters();

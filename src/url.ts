@@ -1,7 +1,7 @@
 import * as tld from "./tld";
 
 /**
- * getDomain returns domain name part of the url.
+ * getDomainName returns domain name part of the url.
  * - ignore `www`
  * @param url
  * @returns
@@ -58,4 +58,35 @@ export function getDomainNameIgnoreSubDomain(url: string): string {
     return fullDomainName;
   }
   return fullDomainName.substr(lastDotIdx + 1);
+}
+
+/**
+ * getURLWithoutParameters returns URL without query parameters and hash.
+ * @param url
+ * @returns
+ */
+export function getURLWithoutParameters(url: string): string {
+  if (url === "") {
+    return url;
+  }
+
+  try {
+    const urlObj = new URL(url);
+    return `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`;
+  } catch (error) {
+    // Fallback for invalid URLs
+    const questionMarkIndex = url.indexOf("?");
+    const hashIndex = url.indexOf("#");
+
+    let endIndex = url.length;
+    if (questionMarkIndex !== -1 && hashIndex !== -1) {
+      endIndex = Math.min(questionMarkIndex, hashIndex);
+    } else if (questionMarkIndex !== -1) {
+      endIndex = questionMarkIndex;
+    } else if (hashIndex !== -1) {
+      endIndex = hashIndex;
+    }
+
+    return url.substring(0, endIndex);
+  }
 }
