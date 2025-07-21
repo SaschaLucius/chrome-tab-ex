@@ -152,6 +152,20 @@ export function closeWindow(windowId: number): Promise<void> {
 }
 
 /**
+ * validateWindowExists checks if a window still exists
+ * @param windowId Window ID to check
+ * @returns Promise<boolean>
+ */
+async function validateWindowExists(windowId: number): Promise<boolean> {
+  try {
+    await chrome.windows.get(windowId);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
  * mergeAllWindows merges all browser windows into the current window
  */
 export async function mergeAllWindows(): Promise<void> {
@@ -180,8 +194,11 @@ export async function mergeAllWindows(): Promise<void> {
           .filter((tab) => tab.id !== undefined && !tab.pinned)
           .map((tab) => tab.id as number);
 
-        tabsToMove.push(...tabIds);
-        windowsToClose.push(window.id);
+        // Only add to close list if window has tabs to move
+        if (tabIds.length > 0) {
+          tabsToMove.push(...tabIds);
+          windowsToClose.push(window.id);
+        }
       }
     }
 
@@ -190,17 +207,44 @@ export async function mergeAllWindows(): Promise<void> {
       await moveTabsToWindow(tabsToMove, currentWindow.id);
     }
 
-    // Close empty windows
+    // Close empty windows with better validation
+    let successfullyClosedCount = 0;
     for (const windowId of windowsToClose) {
       try {
+        // Validate that the window still exists before trying to close it
+        const windowExists = await validateWindowExists(windowId);
+        if (!windowExists) {
+          console.log(`Window ${windowId} no longer exists, skipping closure`);
+          continue;
+        }
+
+        // Double-check that the window is actually empty of non-pinned tabs
+        const window = await chrome.windows.get(windowId, { populate: true });
+        const hasNonPinnedTabs =
+          window.tabs?.some((tab) => !tab.pinned) ?? false;
+
+        if (hasNonPinnedTabs) {
+          console.log(
+            `Window ${windowId} still has non-pinned tabs, skipping closure`
+          );
+          continue;
+        }
+
         await closeWindow(windowId);
+        successfullyClosedCount++;
+        console.log(`Successfully closed window ${windowId}`);
       } catch (error) {
-        console.warn(`Failed to close window ${windowId}:`, error);
+        // More specific error logging
+        if (error instanceof Error) {
+          console.warn(`Failed to close window ${windowId}: ${error.message}`);
+        } else {
+          console.warn(`Failed to close window ${windowId}:`, error);
+        }
       }
     }
 
     console.log(
-      `Merged ${tabsToMove.length} tabs from ${windowsToClose.length} windows`
+      `Merged ${tabsToMove.length} tabs from ${windowsToClose.length} windows (${successfullyClosedCount} windows closed successfully)`
     );
   } catch (error) {
     console.error("Error merging windows:", error);
