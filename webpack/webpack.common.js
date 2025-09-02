@@ -6,6 +6,7 @@ const srcDir = path.join(__dirname, "..", "src");
 module.exports = {
   entry: {
     gt: path.join(srcDir, "groupTabs.ts"),
+    background: path.join(srcDir, "background.ts"),
   },
   output: {
     path: path.join(__dirname, "../dist/js"),

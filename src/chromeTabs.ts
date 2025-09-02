@@ -6,12 +6,52 @@ export function queryTabs(
   return chrome.tabs.query(options);
 }
 
+/**
+ * getTabActivityData gets tab activity data from background script
+ * @returns Promise<{[tabId: string]: number}>
+ */
+export async function getTabActivityData(): Promise<{
+  [tabId: string]: number;
+}> {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({ action: "getTabActivityData" }, (response) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else if (response.error) {
+        reject(new Error(response.error));
+      } else {
+        resolve(response.data || {});
+      }
+    });
+  });
+}
+
 export function getActiveTab(): Promise<chrome.tabs.Tab[]> {
   return chrome.tabs.query({ currentWindow: true, active: true });
 }
 
 export function getPinnedTabs(): Promise<chrome.tabs.Tab[]> {
   return chrome.tabs.query({ currentWindow: true, pinned: true });
+}
+
+/**
+ * sortTabsByLastAccessed sorts tabs by last accessed time (most recent first)
+ * @param tabs
+ * @param tabActivityData
+ * @returns
+ */
+export function sortTabsByLastAccessed(
+  tabs: chrome.tabs.Tab[],
+  tabActivityData: { [tabId: string]: number }
+): chrome.tabs.Tab[] {
+  tabs.sort((a, b) => {
+    const timestampA = a.id ? tabActivityData[a.id.toString()] || 0 : 0;
+    const timestampB = b.id ? tabActivityData[b.id.toString()] || 0 : 0;
+
+    // Sort by timestamp descending (most recent first)
+    return timestampB - timestampA;
+  });
+  return tabs;
 }
 
 /**

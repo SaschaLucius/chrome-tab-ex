@@ -3,8 +3,10 @@
   "description": "Group tabs by domain.",
   "version": "1.4.2",
   "manifest_version": 3,
-  "background": {},
-  "permissions": ["tabs", "tabGroups", "clipboardWrite"],
+  "background": {
+    "service_worker": "js/background.js"
+  },
+  "permissions": ["tabs", "tabGroups", "clipboardWrite", "storage"],
   "action": {
     "default_popup": "menu.html",
     "default_icon": {

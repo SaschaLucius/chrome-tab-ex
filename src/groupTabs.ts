@@ -4,9 +4,15 @@ import * as ctg from "./chromeTabGroups";
 
 function groupTabs() {
   const sortTabs = <HTMLElement>document.getElementById("sortTabs");
+  const sortTabsByLastAccessed = <HTMLElement>(
+    document.getElementById("sortTabsByLastAccessed")
+  );
   const groupTabs = <HTMLElement>document.getElementById("groupTabs");
   const groupTabsIgnoreSubDomain = <HTMLElement>(
     document.getElementById("groupTabsIgnoreSubDomain")
+  );
+  const groupTabsByLastAccessed = <HTMLElement>(
+    document.getElementById("groupTabsByLastAccessed")
   );
   const ungroupTabs = <HTMLElement>document.getElementById("ungroupTabs");
   const removeDupTabs = <HTMLElement>document.getElementById("removeDupTabs");
@@ -27,6 +33,13 @@ function groupTabs() {
    */
   sortTabs.addEventListener("click", async () => {
     sortTabsByURL();
+  });
+
+  /**
+   * action for "Sort Tabs by Last Accessed"
+   */
+  sortTabsByLastAccessed.addEventListener("click", async () => {
+    sortTabsByLastAccessedTime();
   });
 
   /**
@@ -83,6 +96,13 @@ function groupTabs() {
     }
 
     runGroupTabs(domains, domainMap, pinnedTabs, activeTab);
+  });
+
+  /**
+   * action for "Group Tabs by Last Accessed"
+   */
+  groupTabsByLastAccessed.addEventListener("click", async () => {
+    await groupTabsByLastAccessedTime();
   });
 
   /**
@@ -192,6 +212,169 @@ function groupTabs() {
       });
       ctg.moveGroup(groupID, pinnedTabs.length);
       groupedCnt++;
+    }
+  };
+
+  const sortTabsByLastAccessedTime = async () => {
+    try {
+      const tabs = await ct.queryTabs(targetTabConditions);
+      const tabActivityData = await ct.getTabActivityData();
+      const sorted = ct.sortTabsByLastAccessed(tabs, tabActivityData);
+      ct.moveTabs(sorted);
+    } catch (error) {
+      console.error("Error sorting tabs by last accessed:", error);
+    }
+  };
+
+  const groupTabsByLastAccessedTime = async () => {
+    try {
+      console.log("Starting groupTabsByLastAccessedTime...");
+      const tabs = await ct.queryTabs(targetTabConditions);
+      const [activeTab] = await ct.getActiveTab();
+      const pinnedTabs = await ct.getPinnedTabs();
+      const tabActivityData = await ct.getTabActivityData();
+
+      console.log("Tabs found:", tabs.length);
+      console.log("Tab activity data:", tabActivityData);
+
+      // Sort tabs by last accessed first
+      const sortedTabs = ct.sortTabsByLastAccessed(tabs, tabActivityData);
+
+      // Create time-based groups (e.g., "Recently Accessed", "1 Hour Ago", etc.)
+      const timeGroups: { [key: string]: number[] } = {};
+      const groupNames: string[] = [];
+
+      sortedTabs.forEach((tab) => {
+        if (!tab.id) return;
+        const now = new Date();
+
+        const lastAccessed = tabActivityData[tab.id.toString()] || 0;
+
+        let groupName: string;
+
+        // If no activity data, treat as very old
+        if (lastAccessed === 0) {
+          groupName = "Older";
+        } else {
+          const timeDiff = now.getTime() - lastAccessed;
+          const tabDate = new Date(lastAccessed);
+
+          if (timeDiff < 60 * 1000) {
+            // < 1 minute
+            groupName = "Last Minute";
+          } else if (timeDiff < 5 * 60 * 1000) {
+            // < 5 minutes
+            groupName = "Last 5 Minutes";
+          } else if (timeDiff < 30 * 60 * 1000) {
+            // < 30 minutes
+            groupName = "Last 30 Minutes";
+          } else if (timeDiff < 60 * 60 * 1000) {
+            // < 1 hour
+            groupName = "Last Hour";
+          } else if (timeDiff < 12 * 60 * 60 * 1000) {
+            // < 12 hours
+            groupName = "Last Half Day";
+          } else if (
+            now.getDate() === tabDate.getDate() &&
+            now.getMonth() === tabDate.getMonth() &&
+            now.getFullYear() === tabDate.getFullYear()
+          ) {
+            groupName = "Today";
+          } else {
+            // Calculate days difference more reliably
+            const nowDate = new Date(
+              now.getFullYear(),
+              now.getMonth(),
+              now.getDate()
+            );
+            const tabDateOnly = new Date(
+              tabDate.getFullYear(),
+              tabDate.getMonth(),
+              tabDate.getDate()
+            );
+            const daysDiff = Math.floor(
+              (nowDate.getTime() - tabDateOnly.getTime()) /
+                (24 * 60 * 60 * 1000)
+            );
+
+            if (daysDiff === 1) {
+              groupName = "Yesterday";
+            } else if (daysDiff <= 7) {
+              groupName = "This Week";
+            } else if (daysDiff <= 14) {
+              groupName = "Last Week";
+            } else if (
+              now.getMonth() === tabDate.getMonth() &&
+              now.getFullYear() === tabDate.getFullYear()
+            ) {
+              groupName = "This Month";
+            } else if (
+              (now.getMonth() === tabDate.getMonth() + 1 &&
+                now.getFullYear() === tabDate.getFullYear()) ||
+              (now.getMonth() === 0 &&
+                tabDate.getMonth() === 11 &&
+                now.getFullYear() === tabDate.getFullYear() + 1)
+            ) {
+              groupName = "Last Month";
+            } else {
+              groupName = "Older";
+            }
+          }
+        }
+        if (!timeGroups[groupName]) {
+          timeGroups[groupName] = [];
+          groupNames.push(groupName);
+        }
+
+        timeGroups[groupName].push(tab.id);
+      });
+
+      console.log("Time groups created:", timeGroups);
+
+      // Group tabs by time ranges
+      const groupOrder = [
+        "Last Minute",
+        "Last 5 Minutes",
+        "Last 30 Minutes",
+        "Last Hour",
+        "Last Half Day",
+        "Today",
+        "Yesterday",
+        "This Week",
+        "Last Week",
+        "This Month",
+        "Last Month",
+        "Older",
+      ];
+
+      let groupedCnt = 0;
+      for (const groupName of groupOrder) {
+        if (timeGroups[groupName] && timeGroups[groupName].length > 0) {
+          console.log(
+            `Processing group: ${groupName} with ${timeGroups[groupName].length} tabs`
+          );
+
+          // Create group even for single tabs
+          const groupID: number = await ct.groupTabs(timeGroups[groupName]);
+          const collapsed: boolean = !timeGroups[groupName].includes(
+            <number>activeTab.id
+          );
+          const colorIdx = groupedCnt % ctg.groupColors.length;
+
+          ctg.updateTabGroup(groupID, {
+            collapsed: collapsed,
+            title: groupName,
+            color: ctg.groupColors[colorIdx],
+          });
+          ctg.moveGroup(groupID, pinnedTabs.length);
+          groupedCnt++;
+        }
+      }
+
+      // Move sorted tabs to maintain order
+      ct.moveTabs(sortedTabs);
+    } catch (error) {
+      console.error("Error grouping tabs by last accessed:", error);
     }
   };
 
