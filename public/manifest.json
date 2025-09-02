@@ -4,11 +4,7 @@
   "version": "1.4.2",
   "manifest_version": 3,
   "background": {},
-  "permissions": [
-    "tabs",
-    "tabGroups",
-    "clipboardWrite"
-  ],
+  "permissions": ["tabs", "tabGroups", "clipboardWrite"],
   "action": {
     "default_popup": "menu.html",
     "default_icon": {
