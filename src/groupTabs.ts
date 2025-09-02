@@ -20,6 +20,9 @@ function groupTabs() {
     document.getElementById("removeDupTabsIgnoreParams")
   );
   const copyAllUrls = <HTMLElement>document.getElementById("copyAllUrls");
+  const moveCurrentTabToNewWindow = <HTMLElement>(
+    document.getElementById("moveCurrentTabToNewWindow")
+  );
   const mergeWindows = <HTMLElement>document.getElementById("mergeWindows");
   const targetTabConditions: chrome.tabs.QueryInfo = {
     currentWindow: true,
@@ -162,6 +165,19 @@ function groupTabs() {
       window.close();
     } catch (error) {
       console.error("Error copying URLs to clipboard:", error);
+    }
+  });
+
+  /**
+   * action for "Move Current Tab to New Window"
+   */
+  moveCurrentTabToNewWindow.addEventListener("click", async () => {
+    try {
+      await ct.moveCurrentTabToNewWindow();
+      // Close the popup after successful move
+      window.close();
+    } catch (error) {
+      console.error("Error moving current tab to new window:", error);
     }
   });
 

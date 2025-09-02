@@ -322,3 +322,32 @@ export async function copyAllUrlsToClipboard(): Promise<void> {
     throw error;
   }
 }
+
+/**
+ * moveCurrentTabToNewWindow moves the current active tab to a new window
+ * @returns Promise<chrome.windows.Window>
+ */
+export async function moveCurrentTabToNewWindow(): Promise<chrome.windows.Window> {
+  try {
+    // Get the current active tab
+    const activeTabs = await getActiveTab();
+    if (activeTabs.length === 0 || !activeTabs[0].id) {
+      throw new Error("No active tab found");
+    }
+
+    const activeTab = activeTabs[0];
+
+    // Create a new window with the active tab
+    const newWindow = await chrome.windows.create({
+      tabId: activeTab.id,
+      focused: true,
+      type: "normal",
+    });
+
+    console.log(`Moved tab "${activeTab.title}" to new window`);
+    return newWindow;
+  } catch (error) {
+    console.error("Error moving current tab to new window:", error);
+    throw error;
+  }
+}
