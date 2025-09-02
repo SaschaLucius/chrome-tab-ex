@@ -13,6 +13,7 @@ function groupTabs() {
   const removeDupTabsIgnoreParams = <HTMLElement>(
     document.getElementById("removeDupTabsIgnoreParams")
   );
+  const copyAllUrls = <HTMLElement>document.getElementById("copyAllUrls");
   const mergeWindows = <HTMLElement>document.getElementById("mergeWindows");
   const targetTabConditions: chrome.tabs.QueryInfo = {
     currentWindow: true,
@@ -128,6 +129,19 @@ function groupTabs() {
       window.close();
     } catch (error) {
       console.error("Error merging windows:", error);
+    }
+  });
+
+  /**
+   * action for "Copy All URLs to Clipboard"
+   */
+  copyAllUrls.addEventListener("click", async () => {
+    try {
+      await ct.copyAllUrlsToClipboard();
+      // Close the popup after successful copy
+      window.close();
+    } catch (error) {
+      console.error("Error copying URLs to clipboard:", error);
     }
   });
 
