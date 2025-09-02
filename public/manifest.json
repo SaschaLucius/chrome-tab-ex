@@ -6,7 +6,13 @@
   "background": {
     "service_worker": "js/background.js"
   },
-  "permissions": ["tabs", "tabGroups", "clipboardWrite", "storage"],
+  "permissions": [
+    "tabs",
+    "tabGroups",
+    "clipboardWrite",
+    "storage",
+    "notifications"
+  ],
   "action": {
     "default_popup": "menu.html",
     "default_icon": {

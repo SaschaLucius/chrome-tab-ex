@@ -378,6 +378,36 @@ function groupTabs() {
     }
   };
 
+  /**
+   * Show notification about duplicate tabs removal
+   * @param closedCount Number of tabs that were closed
+   * @param ignoreParams Whether URL parameters were ignored during deduplication
+   */
+  const showDuplicateTabsNotification = (
+    closedCount: number,
+    ignoreParams: boolean = false
+  ) => {
+    const paramsSuffix = ignoreParams ? " (ignoring URL parameters)" : "";
+
+    if (closedCount > 0) {
+      chrome.notifications.create({
+        type: "basic",
+        iconUrl: "/images/gt_icon48.png",
+        title: "Group Tabs",
+        message: `Closed ${closedCount} duplicate tab${
+          closedCount === 1 ? "" : "s"
+        }${paramsSuffix}`,
+      });
+    } else {
+      chrome.notifications.create({
+        type: "basic",
+        iconUrl: "/images/gt_icon48.png",
+        title: "Group Tabs",
+        message: `No duplicate tabs found${paramsSuffix}`,
+      });
+    }
+  };
+
   const removeDuplicatedTabs = async () => {
     const tabs = await ct.queryTabs({
       currentWindow: true,
@@ -385,6 +415,8 @@ function groupTabs() {
       url: ["http://*/*", "https://*/*"],
     });
     const exists: { [key: string]: boolean } = {};
+    let closedCount = 0;
+
     for (let i = 0; i < tabs.length; i++) {
       if (tabs[i] === undefined) {
         continue;
@@ -397,11 +429,15 @@ function groupTabs() {
         if (t.id === undefined) {
           continue;
         }
-        ct.removeTab(t.id);
+        await ct.removeTab(t.id);
+        closedCount++;
         continue;
       }
       exists[t.url] = true;
     }
+
+    // Show notification with count
+    showDuplicateTabsNotification(closedCount);
   };
 
   const removeDuplicatedTabsIgnoreParams = async () => {
@@ -411,6 +447,8 @@ function groupTabs() {
       url: ["http://*/*", "https://*/*"],
     });
     const exists: { [key: string]: boolean } = {};
+    let closedCount = 0;
+
     for (let i = 0; i < tabs.length; i++) {
       if (tabs[i] === undefined) {
         continue;
@@ -425,11 +463,15 @@ function groupTabs() {
         if (t.id === undefined) {
           continue;
         }
-        ct.removeTab(t.id);
+        await ct.removeTab(t.id);
+        closedCount++;
         continue;
       }
       exists[urlWithoutParams] = true;
     }
+
+    // Show notification with count
+    showDuplicateTabsNotification(closedCount, true);
   };
 }
 
