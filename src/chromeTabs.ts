@@ -351,3 +351,31 @@ export async function moveCurrentTabToNewWindow(): Promise<chrome.windows.Window
     throw error;
   }
 }
+
+/**
+ * closeCurrentTab closes the current active tab
+ * @returns Promise<void>
+ */
+export async function closeCurrentTab(): Promise<void> {
+  try {
+    // Get the current active tab
+    const activeTabs = await getActiveTab();
+    if (activeTabs.length === 0 || !activeTabs[0].id) {
+      throw new Error("No active tab found");
+    }
+
+    const activeTab = activeTabs[0];
+    const tabId = activeTab.id;
+
+    if (tabId === undefined) {
+      throw new Error("Active tab has no ID");
+    }
+
+    // Close the current tab
+    await chrome.tabs.remove(tabId);
+    console.log(`Closed tab "${activeTab.title}"`);
+  } catch (error) {
+    console.error("Error closing current tab:", error);
+    throw error;
+  }
+}

@@ -20,6 +20,9 @@ function groupTabs() {
     document.getElementById("removeDupTabsIgnoreParams")
   );
   const copyAllUrls = <HTMLElement>document.getElementById("copyAllUrls");
+  const closeCurrentTab = <HTMLElement>(
+    document.getElementById("closeCurrentTab")
+  );
   const moveCurrentTabToNewWindow = <HTMLElement>(
     document.getElementById("moveCurrentTabToNewWindow")
   );
@@ -165,6 +168,18 @@ function groupTabs() {
       window.close();
     } catch (error) {
       console.error("Error copying URLs to clipboard:", error);
+    }
+  });
+
+  /**
+   * action for "Close Current Tab"
+   */
+  closeCurrentTab.addEventListener("click", async () => {
+    try {
+      await ct.closeCurrentTab();
+      // The popup will automatically close when the tab closes
+    } catch (error) {
+      console.error("Error closing current tab:", error);
     }
   });
 
