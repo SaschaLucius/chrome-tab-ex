@@ -251,3 +251,30 @@ export async function mergeAllWindows(): Promise<void> {
     throw error;
   }
 }
+
+/**
+ * copyAllUrlsToClipboard copies all URLs from the current window to clipboard
+ * Each URL is separated by a newline
+ */
+export async function copyAllUrlsToClipboard(): Promise<void> {
+  try {
+    const tabs = await chrome.tabs.query({ 
+      currentWindow: true 
+    });
+    
+    const urls = tabs
+      .filter(tab => tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://')))
+      .map(tab => tab.url!)
+      .join('\n');
+    
+    if (urls) {
+      await navigator.clipboard.writeText(urls);
+      console.log(`Copied ${tabs.length} URLs to clipboard`);
+    } else {
+      console.log('No URLs found to copy');
+    }
+  } catch (error) {
+    console.error('Error copying URLs to clipboard:', error);
+    throw error;
+  }
+}

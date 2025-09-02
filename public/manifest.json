@@ -6,7 +6,8 @@
   "background": {},
   "permissions": [
     "tabs",
-    "tabGroups"
+    "tabGroups",
+    "clipboardWrite"
   ],
   "action": {
     "default_popup": "menu.html",
