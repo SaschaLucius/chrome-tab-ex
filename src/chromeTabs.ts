@@ -158,6 +158,169 @@ export function removeTab(tabID: number): void {
 }
 
 /**
+ * Interface for closed tab information
+ */
+export interface ClosedTabInfo {
+  id: number;
+  url: string;
+  title: string;
+  favIconUrl?: string;
+  index: number;
+  windowId: number;
+  groupId?: number;
+  timestamp: number;
+}
+
+/**
+ * Interface for closed tab session (group of tabs closed together)
+ */
+export interface ClosedTabSession {
+  tabs: ClosedTabInfo[];
+  timestamp: number;
+  action: string; // 'closeSelected', 'removeDuplicates', 'removeDuplicatesIgnoreParams'
+}
+
+const CLOSED_TABS_STORAGE_KEY = "closed_tabs_history";
+const MAX_CLOSED_SESSIONS = 10;
+
+/**
+ * Get closed tabs history from storage
+ */
+async function getClosedTabsHistory(): Promise<ClosedTabSession[]> {
+  const result = await chrome.storage.local.get(CLOSED_TABS_STORAGE_KEY);
+  return result[CLOSED_TABS_STORAGE_KEY] || [];
+}
+
+/**
+ * Save closed tabs history to storage
+ */
+async function saveClosedTabsHistory(
+  history: ClosedTabSession[]
+): Promise<void> {
+  // Keep only the most recent sessions
+  const trimmedHistory = history.slice(0, MAX_CLOSED_SESSIONS);
+  await chrome.storage.local.set({ [CLOSED_TABS_STORAGE_KEY]: trimmedHistory });
+}
+
+/**
+ * Add a closed tab session to history
+ */
+async function addClosedTabSession(session: ClosedTabSession): Promise<void> {
+  const history = await getClosedTabsHistory();
+  history.unshift(session); // Add to beginning
+  await saveClosedTabsHistory(history);
+}
+
+/**
+ * Common function to close tabs with history tracking
+ * @param tabs Array of tab objects or single tab object to close
+ * @param action Action description for history tracking
+ * @returns Promise<number> Number of tabs closed
+ */
+export async function closeTabsWithHistory(
+  tabs: chrome.tabs.Tab | chrome.tabs.Tab[],
+  action: string
+): Promise<number> {
+  const tabsArray = Array.isArray(tabs) ? tabs : [tabs];
+  const validTabs = tabsArray.filter(
+    (tab) => tab.id !== undefined && tab.url !== undefined
+  );
+
+  if (validTabs.length === 0) {
+    return 0;
+  }
+
+  // Create closed tab info for history
+  const closedTabsInfo: ClosedTabInfo[] = validTabs.map((tab) => ({
+    id: tab.id!,
+    url: tab.url!,
+    title: tab.title || tab.url!,
+    favIconUrl: tab.favIconUrl,
+    index: tab.index,
+    windowId: tab.windowId,
+    groupId:
+      tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE
+        ? tab.groupId
+        : undefined,
+    timestamp: Date.now(),
+  }));
+
+  // Store in history before closing
+  const session: ClosedTabSession = {
+    tabs: closedTabsInfo,
+    timestamp: Date.now(),
+    action: action,
+  };
+
+  await addClosedTabSession(session);
+
+  // Close the tabs
+  const tabIds = validTabs.map((tab) => tab.id!);
+  await chrome.tabs.remove(tabIds);
+
+  console.log(`Closed ${validTabs.length} tab(s) with action: ${action}`);
+  return validTabs.length;
+}
+
+/**
+ * Restore the last closed tab session
+ * @returns Promise<number> Number of tabs restored
+ */
+export async function restoreLastClosedTabs(): Promise<number> {
+  try {
+    const history = await getClosedTabsHistory();
+
+    if (history.length === 0) {
+      console.log("No closed tabs to restore");
+      return 0;
+    }
+
+    const lastSession = history[0];
+    let restoredCount = 0;
+
+    // Sort tabs by their original index to maintain order
+    const sortedTabs = [...lastSession.tabs].sort((a, b) => a.index - b.index);
+
+    for (const tabInfo of sortedTabs) {
+      try {
+        const newTab = await chrome.tabs.create({
+          url: tabInfo.url,
+          index: tabInfo.index,
+          windowId: tabInfo.windowId,
+          active: false, // Don't activate each tab as it's created
+        });
+
+        // If the tab was in a group, we could potentially restore the group
+        // but this is complex and may not be necessary for the initial implementation
+        restoredCount++;
+      } catch (error) {
+        console.warn(`Failed to restore tab: ${tabInfo.url}`, error);
+      }
+    }
+
+    // Remove the restored session from history
+    history.shift();
+    await saveClosedTabsHistory(history);
+
+    console.log(
+      `Restored ${restoredCount} tab(s) from action: ${lastSession.action}`
+    );
+    return restoredCount;
+  } catch (error) {
+    console.error("Error restoring closed tabs:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get information about the last closed tab session for UI display
+ */
+export async function getLastClosedTabsInfo(): Promise<ClosedTabSession | null> {
+  const history = await getClosedTabsHistory();
+  return history.length > 0 ? history[0] : null;
+}
+
+/**
  * getAllWindows gets all browser windows
  * @returns Promise<chrome.windows.Window[]>
  */
@@ -379,9 +542,9 @@ export async function moveSelectedTabsToNewWindow(): Promise<chrome.windows.Wind
 /**
  * closeSelectedTabs closes the selected tabs
  * If no tabs are selected, closes the current active tab
- * @returns Promise<void>
+ * @returns Promise<number> Number of tabs closed
  */
-export async function closeSelectedTabs(): Promise<void> {
+export async function closeSelectedTabs(): Promise<number> {
   try {
     // Get selected tabs first, fallback to active tab if none selected
     let tabsToClose = await getSelectedTabs();
@@ -396,18 +559,12 @@ export async function closeSelectedTabs(): Promise<void> {
       throw new Error("No tabs found to close");
     }
 
-    // Filter out tabs without IDs and get just the IDs
-    const tabIds = tabsToClose
-      .filter((tab) => tab.id !== undefined)
-      .map((tab) => tab.id as number);
-
-    if (tabIds.length === 0) {
-      throw new Error("No valid tab IDs found");
-    }
-
-    // Close all selected tabs
-    await chrome.tabs.remove(tabIds);
-    console.log(`Closed ${tabIds.length} tab(s)`);
+    // Use the common close function with history tracking
+    const closedCount = await closeTabsWithHistory(
+      tabsToClose,
+      "closeSelected"
+    );
+    return closedCount;
   } catch (error) {
     console.error("Error closing selected tabs:", error);
     throw error;

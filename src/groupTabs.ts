@@ -27,6 +27,9 @@ function groupTabs() {
     document.getElementById("moveCurrentTabToNewWindow")
   );
   const mergeWindows = <HTMLElement>document.getElementById("mergeWindows");
+  const restoreLastClosedTabs = <HTMLElement>(
+    document.getElementById("restoreLastClosedTabs")
+  );
   const targetTabConditions: chrome.tabs.QueryInfo = {
     currentWindow: true,
     pinned: false,
@@ -193,6 +196,38 @@ function groupTabs() {
       window.close();
     } catch (error) {
       console.error("Error moving selected tabs to new window:", error);
+    }
+  });
+
+  /**
+   * action for "Restore Last Closed Tabs"
+   */
+  restoreLastClosedTabs.addEventListener("click", async () => {
+    try {
+      const restoredCount = await ct.restoreLastClosedTabs();
+      if (restoredCount > 0) {
+        // Show notification about restored tabs
+        chrome.notifications.create({
+          type: "basic",
+          iconUrl: "/images/gt_icon48.png",
+          title: "Group Tabs",
+          message: `Restored ${restoredCount} tab${
+            restoredCount === 1 ? "" : "s"
+          }`,
+        });
+        // Close the popup after successful restore
+        window.close();
+      } else {
+        // Show notification that no tabs were available to restore
+        chrome.notifications.create({
+          type: "basic",
+          iconUrl: "/images/gt_icon48.png",
+          title: "Group Tabs",
+          message: "No closed tabs to restore",
+        });
+      }
+    } catch (error) {
+      console.error("Error restoring closed tabs:", error);
     }
   });
 
@@ -446,7 +481,7 @@ function groupTabs() {
       url: ["http://*/*", "https://*/*"],
     });
     const exists: { [key: string]: boolean } = {};
-    let closedCount = 0;
+    const tabsToClose: chrome.tabs.Tab[] = [];
 
     for (let i = 0; i < tabs.length; i++) {
       if (tabs[i] === undefined) {
@@ -460,12 +495,17 @@ function groupTabs() {
         if (t.id === undefined) {
           continue;
         }
-        await ct.removeTab(t.id);
-        closedCount++;
+        tabsToClose.push(t);
         continue;
       }
       exists[t.url] = true;
     }
+
+    // Use the common close function with history tracking
+    const closedCount = await ct.closeTabsWithHistory(
+      tabsToClose,
+      "removeDuplicates"
+    );
 
     // Show notification with count
     showDuplicateTabsNotification(closedCount);
@@ -478,7 +518,7 @@ function groupTabs() {
       url: ["http://*/*", "https://*/*"],
     });
     const exists: { [key: string]: boolean } = {};
-    let closedCount = 0;
+    const tabsToClose: chrome.tabs.Tab[] = [];
 
     for (let i = 0; i < tabs.length; i++) {
       if (tabs[i] === undefined) {
@@ -494,12 +534,17 @@ function groupTabs() {
         if (t.id === undefined) {
           continue;
         }
-        await ct.removeTab(t.id);
-        closedCount++;
+        tabsToClose.push(t);
         continue;
       }
       exists[urlWithoutParams] = true;
     }
+
+    // Use the common close function with history tracking
+    const closedCount = await ct.closeTabsWithHistory(
+      tabsToClose,
+      "removeDuplicatesIgnoreParams"
+    );
 
     // Show notification with count
     showDuplicateTabsNotification(closedCount, true);
