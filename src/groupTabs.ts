@@ -172,27 +172,27 @@ function groupTabs() {
   });
 
   /**
-   * action for "Close Current Tab"
+   * action for "Close Selected Tabs"
    */
   closeCurrentTab.addEventListener("click", async () => {
     try {
-      await ct.closeCurrentTab();
+      await ct.closeSelectedTabs();
       // The popup will automatically close when the tab closes
     } catch (error) {
-      console.error("Error closing current tab:", error);
+      console.error("Error closing selected tabs:", error);
     }
   });
 
   /**
-   * action for "Move Current Tab to New Window"
+   * action for "Move Selected Tabs to New Window"
    */
   moveCurrentTabToNewWindow.addEventListener("click", async () => {
     try {
-      await ct.moveCurrentTabToNewWindow();
+      await ct.moveSelectedTabsToNewWindow();
       // Close the popup after successful move
       window.close();
     } catch (error) {
-      console.error("Error moving current tab to new window:", error);
+      console.error("Error moving selected tabs to new window:", error);
     }
   });
 

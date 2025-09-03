@@ -30,6 +30,10 @@ export function getActiveTab(): Promise<chrome.tabs.Tab[]> {
   return chrome.tabs.query({ currentWindow: true, active: true });
 }
 
+export function getSelectedTabs(): Promise<chrome.tabs.Tab[]> {
+  return chrome.tabs.query({ currentWindow: true, highlighted: true });
+}
+
 export function getPinnedTabs(): Promise<chrome.tabs.Tab[]> {
   return chrome.tabs.query({ currentWindow: true, pinned: true });
 }
@@ -324,58 +328,88 @@ export async function copyAllUrlsToClipboard(): Promise<void> {
 }
 
 /**
- * moveCurrentTabToNewWindow moves the current active tab to a new window
+ * moveSelectedTabsToNewWindow moves the selected tabs to a new window
+ * If no tabs are selected, moves the current active tab
  * @returns Promise<chrome.windows.Window>
  */
-export async function moveCurrentTabToNewWindow(): Promise<chrome.windows.Window> {
+export async function moveSelectedTabsToNewWindow(): Promise<chrome.windows.Window> {
   try {
-    // Get the current active tab
-    const activeTabs = await getActiveTab();
-    if (activeTabs.length === 0 || !activeTabs[0].id) {
-      throw new Error("No active tab found");
+    // Get selected tabs first, fallback to active tab if none selected
+    let tabsToMove = await getSelectedTabs();
+
+    // If no tabs are selected or only one tab is selected (which is the active tab)
+    // fallback to just the active tab
+    if (tabsToMove.length <= 1) {
+      tabsToMove = await getActiveTab();
     }
 
-    const activeTab = activeTabs[0];
+    if (tabsToMove.length === 0) {
+      throw new Error("No tabs found to move");
+    }
 
-    // Create a new window with the active tab
+    // Filter out tabs without IDs and get just the IDs
+    const tabIds = tabsToMove
+      .filter((tab) => tab.id !== undefined)
+      .map((tab) => tab.id as number);
+
+    if (tabIds.length === 0) {
+      throw new Error("No valid tab IDs found");
+    }
+
+    // Create a new window with the first tab, then move the rest
     const newWindow = await chrome.windows.create({
-      tabId: activeTab.id,
+      tabId: tabIds[0],
       focused: true,
       type: "normal",
     });
 
-    console.log(`Moved tab "${activeTab.title}" to new window`);
+    // If there are more tabs to move, move them to the new window
+    if (tabIds.length > 1 && newWindow.id) {
+      await moveTabsToWindow(tabIds.slice(1), newWindow.id);
+    }
+
+    console.log(`Moved ${tabIds.length} tab(s) to new window`);
     return newWindow;
   } catch (error) {
-    console.error("Error moving current tab to new window:", error);
+    console.error("Error moving selected tabs to new window:", error);
     throw error;
   }
 }
 
 /**
- * closeCurrentTab closes the current active tab
+ * closeSelectedTabs closes the selected tabs
+ * If no tabs are selected, closes the current active tab
  * @returns Promise<void>
  */
-export async function closeCurrentTab(): Promise<void> {
+export async function closeSelectedTabs(): Promise<void> {
   try {
-    // Get the current active tab
-    const activeTabs = await getActiveTab();
-    if (activeTabs.length === 0 || !activeTabs[0].id) {
-      throw new Error("No active tab found");
+    // Get selected tabs first, fallback to active tab if none selected
+    let tabsToClose = await getSelectedTabs();
+
+    // If no tabs are selected or only one tab is selected (which is the active tab)
+    // fallback to just the active tab
+    if (tabsToClose.length <= 1) {
+      tabsToClose = await getActiveTab();
     }
 
-    const activeTab = activeTabs[0];
-    const tabId = activeTab.id;
-
-    if (tabId === undefined) {
-      throw new Error("Active tab has no ID");
+    if (tabsToClose.length === 0) {
+      throw new Error("No tabs found to close");
     }
 
-    // Close the current tab
-    await chrome.tabs.remove(tabId);
-    console.log(`Closed tab "${activeTab.title}"`);
+    // Filter out tabs without IDs and get just the IDs
+    const tabIds = tabsToClose
+      .filter((tab) => tab.id !== undefined)
+      .map((tab) => tab.id as number);
+
+    if (tabIds.length === 0) {
+      throw new Error("No valid tab IDs found");
+    }
+
+    // Close all selected tabs
+    await chrome.tabs.remove(tabIds);
+    console.log(`Closed ${tabIds.length} tab(s)`);
   } catch (error) {
-    console.error("Error closing current tab:", error);
+    console.error("Error closing selected tabs:", error);
     throw error;
   }
 }
