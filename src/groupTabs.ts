@@ -27,6 +27,7 @@ function groupTabs() {
     document.getElementById("moveCurrentTabToNewWindow")
   );
   const mergeWindows = <HTMLElement>document.getElementById("mergeWindows");
+  const canvasPiP = <HTMLElement>document.getElementById("canvasPiP");
   const restoreLastClosedTabs = <HTMLElement>(
     document.getElementById("restoreLastClosedTabs")
   );
@@ -59,23 +60,17 @@ function groupTabs() {
     const tabs = await ct.queryTabs(targetTabConditions);
     const [activeTab] = await ct.getActiveTab();
     const pinnedTabs = await ct.getPinnedTabs();
-
     const domainMap: { [key: string]: number[] } = {};
-    const domains: string[] = Array();
+    const domains: string[] = [];
     for (let i = 0; i < tabs.length; i++) {
       const domain = url.getDomainName(<string>tabs[i].url);
-      if (domain === "") {
-        continue;
-      }
-
-      if (domainMap[domain] === undefined) {
-        domainMap[domain] = Array();
+      if (domain === "") continue;
+      if (!domainMap[domain]) {
+        domainMap[domain] = [];
         domains.push(domain);
       }
-
       domainMap[domain].push(<number>tabs[i].id);
     }
-
     runGroupTabs(domains, domainMap, pinnedTabs, activeTab);
   });
 
@@ -87,23 +82,17 @@ function groupTabs() {
     const tabs = await ct.queryTabs(targetTabConditions);
     const [activeTab] = await ct.getActiveTab();
     const pinnedTabs = await ct.getPinnedTabs();
-
     const domainMap: { [key: string]: number[] } = {};
-    const domains: string[] = Array();
+    const domains: string[] = [];
     for (let i = 0; i < tabs.length; i++) {
       const domain = url.getDomainNameIgnoreSubDomain(<string>tabs[i].url);
-      if (domain === "") {
-        continue;
-      }
-
-      if (domainMap[domain] === undefined) {
-        domainMap[domain] = Array();
+      if (domain === "") continue;
+      if (!domainMap[domain]) {
+        domainMap[domain] = [];
         domains.push(domain);
       }
-
       domainMap[domain].push(<number>tabs[i].id);
     }
-
     runGroupTabs(domains, domainMap, pinnedTabs, activeTab);
   });
 
@@ -123,19 +112,16 @@ function groupTabs() {
       pinned: false,
       url: ["http://*/*", "https://*/*"],
     });
-
-    const tabIDs: number[] = Array();
+    const tabIDs: number[] = [];
     for (let i = 0; i < tabs.length; i++) {
-      if (tabs[i].groupId === undefined) {
-        continue;
-      }
+      if (tabs[i].groupId === undefined) continue;
       tabIDs.push(<number>tabs[i].id);
     }
     ct.ungroupTabs(tabIDs);
   });
 
   /**
-   * action for "Remove duplicated tabs
+   * action for "Remove duplicated tabs"
    */
   removeDupTabs.addEventListener("click", async () => {
     removeDuplicatedTabs();
@@ -154,10 +140,109 @@ function groupTabs() {
   mergeWindows.addEventListener("click", async () => {
     try {
       await ct.mergeAllWindows();
-      // Close the popup after successful merge
       window.close();
     } catch (error) {
       console.error("Error merging windows:", error);
+    }
+  });
+
+  /**
+   * action for "Canvas PiP Overlay" (uses content script)
+   */
+  canvasPiP.addEventListener("click", async () => {
+    try {
+      const [activeTab] = await ct.getActiveTab();
+      if (!activeTab || activeTab.id == null) return;
+      const tabId = activeTab.id;
+      const response = await new Promise<any>((resolve) => {
+        let done = false;
+        const timeout = setTimeout(() => {
+          if (done) return;
+          done = true;
+          resolve({ ok: false, reason: "timeout-waiting-response" });
+        }, 4000);
+        chrome.tabs.sendMessage(tabId, { type: "START_CANVAS_PIP" }, (resp) => {
+          if (done) return;
+          done = true;
+          clearTimeout(timeout);
+          if (chrome.runtime.lastError) {
+            const msg = chrome.runtime.lastError.message || "";
+            if (
+              msg.includes("Could not establish connection") ||
+              msg.includes("Receiving end does not exist")
+            ) {
+              // Attempt to inject content script dynamically then retry once
+              (async () => {
+                try {
+                  await chrome.scripting.executeScript({
+                    target: { tabId },
+                    files: ["js/canvasPiPContent.js"],
+                  });
+                  setTimeout(() => {
+                    chrome.tabs.sendMessage(
+                      tabId,
+                      { type: "START_CANVAS_PIP" },
+                      (second) => {
+                        if (chrome.runtime.lastError) {
+                          resolve({
+                            ok: false,
+                            reason:
+                              "inject-retry-error:" +
+                              chrome.runtime.lastError.message,
+                          });
+                        } else {
+                          resolve(
+                            second || {
+                              ok: false,
+                              reason: "no-response-after-inject",
+                            }
+                          );
+                        }
+                      }
+                    );
+                  }, 120);
+                } catch (injErr) {
+                  resolve({
+                    ok: false,
+                    reason: "inject-failed:" + (injErr as Error).message,
+                  });
+                }
+              })();
+              return;
+            }
+            resolve({
+              ok: false,
+              reason: "sendMessage-error:" + msg,
+            });
+            return;
+          }
+          resolve(resp);
+        });
+      });
+      if (!response || !response.ok) {
+        chrome.notifications.create({
+          type: "basic",
+          iconUrl: "/images/gt_icon48.png",
+          title: "Canvas PiP failed",
+          message: (response && response.reason) || "unknown",
+        });
+      } else {
+        chrome.notifications.create({
+          type: "basic",
+          iconUrl: "/images/gt_icon48.png",
+          title: "Canvas PiP",
+          message: "Started Picture-in-Picture",
+        });
+        window.close();
+      }
+    } catch (error) {
+      console.error("Error starting canvas PiP:", error);
+      chrome.notifications.create({
+        type: "basic",
+        iconUrl: "/images/gt_icon48.png",
+        title: "Canvas PiP error",
+        message: (error as Error).message || "Unknown error",
+      });
     }
   });
 

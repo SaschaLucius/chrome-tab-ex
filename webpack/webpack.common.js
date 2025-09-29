@@ -7,6 +7,7 @@ module.exports = {
   entry: {
     gt: path.join(srcDir, "groupTabs.ts"),
     background: path.join(srcDir, "background.ts"),
+    canvasPiPContent: path.join(srcDir, "canvasPiPContent.ts"),
   },
   output: {
     path: path.join(__dirname, "../dist/js"),

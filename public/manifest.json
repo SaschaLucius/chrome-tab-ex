@@ -11,7 +11,9 @@
     "tabGroups",
     "clipboardWrite",
     "storage",
-    "notifications"
+    "notifications",
+    "scripting",
+    "activeTab"
   ],
   "action": {
     "default_popup": "menu.html",
@@ -27,5 +29,13 @@
     "32": "/images/gt_icon32.png",
     "48": "/images/gt_icon48.png",
     "128": "/images/gt_icon128.png"
-  }
+  },
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["/js/canvasPiPContent.js"],
+      "run_at": "document_idle"
+    }
+  ]
 }
