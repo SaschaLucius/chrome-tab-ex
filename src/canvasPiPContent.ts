@@ -189,12 +189,22 @@ async function startCanvasPiP(): Promise<PiPResult> {
       if (!helper) {
         helper = document.createElement("video");
         helper.id = "__gt_canvas_pip_video";
+        helper.setAttribute("data-gt-purpose", "canvas-pip-helper");
         helper.muted = true;
         helper.playsInline = true;
-        helper.style.position = "fixed";
-        helper.style.top = "-10000px";
-        helper.style.width = "1px";
-        helper.style.height = "1px";
+        // Keep the helper video within viewport (opacity 0) so Chrome's Back to tab can focus original tab
+        helper.style.cssText =
+          "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;z-index:0;";
+        helper.addEventListener("enterpictureinpicture", () => {
+          try {
+            console.debug("[GroupTabs] helper video entered PiP");
+          } catch {}
+        });
+        helper.addEventListener("leavepictureinpicture", () => {
+          try {
+            console.debug("[GroupTabs] helper video left PiP");
+          } catch {}
+        });
         document.documentElement.appendChild(helper);
       }
       if (helper.srcObject instanceof MediaStream) {
