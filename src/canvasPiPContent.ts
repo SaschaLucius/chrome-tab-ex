@@ -30,7 +30,8 @@ async function startCanvasPiP(): Promise<PiPResult> {
       api:
         typeof (HTMLVideoElement.prototype as any).requestPictureInPicture ===
         "function",
-      documentPiP: typeof (window as any).documentPictureInPicture !== 'undefined'
+      documentPiP:
+        typeof (window as any).documentPictureInPicture !== "undefined",
     };
 
     // Helper to pick largest visible element from a list
@@ -67,17 +68,19 @@ async function startCanvasPiP(): Promise<PiPResult> {
     function scanDoc(doc: Document) {
       try {
         aggregate.canvases.push(
-          ...Array.from(doc.querySelectorAll('canvas')).filter(visible)
+          ...Array.from(doc.querySelectorAll("canvas")).filter(visible)
         );
         aggregate.videos.push(
-          ...Array.from(doc.querySelectorAll('video')).filter(visible)
+          ...Array.from(doc.querySelectorAll("video")).filter(visible)
         );
       } catch {}
     }
 
     scanDoc(document);
     // Same-origin iframe traversal (1 level deep to limit cost)
-    const iframes = Array.from(document.querySelectorAll('iframe')) as HTMLIFrameElement[];
+    const iframes = Array.from(
+      document.querySelectorAll("iframe")
+    ) as HTMLIFrameElement[];
     const accessibleIframes: HTMLIFrameElement[] = [];
     for (const f of iframes) {
       try {
@@ -128,32 +131,52 @@ async function startCanvasPiP(): Promise<PiPResult> {
       // - For cross-origin iframes we cannot access the frame contents, but we can still open a new empty iframe pointing to the same src.
       // - If DPiP is not available or fails, we fall back to reporting no media available.
       const iframeCandidates = iframes.filter(visible);
-      if (iframeCandidates.length && support.documentPiP && (window as any).documentPictureInPicture?.requestWindow) {
+      if (
+        iframeCandidates.length &&
+        support.documentPiP &&
+        (window as any).documentPictureInPicture?.requestWindow
+      ) {
         try {
-          const targetIframe = pickLargest(iframeCandidates) as HTMLIFrameElement;
+          const targetIframe = pickLargest(
+            iframeCandidates
+          ) as HTMLIFrameElement;
           const rect = targetIframe.getBoundingClientRect();
-          const dpipWin: any = await (window as any).documentPictureInPicture.requestWindow({ width: Math.round(rect.width), height: Math.round(rect.height) });
+          const dpipWin: any = await (
+            window as any
+          ).documentPictureInPicture.requestWindow({
+            width: Math.round(rect.width),
+            height: Math.round(rect.height),
+          });
           // Basic styling in DPIP window
-          dpipWin.document.body.style.margin = '0';
-            // clone or recreate iframe
-          const iframeClone = dpipWin.document.createElement('iframe');
-          iframeClone.src = targetIframe.src || 'about:blank';
-          iframeClone.style.width = '100%';
-          iframeClone.style.height = '100%';
-          iframeClone.style.border = '0';
+          dpipWin.document.body.style.margin = "0";
+          // clone or recreate iframe
+          const iframeClone = dpipWin.document.createElement("iframe");
+          iframeClone.src = targetIframe.src || "about:blank";
+          iframeClone.style.width = "100%";
+          iframeClone.style.height = "100%";
+          iframeClone.style.border = "0";
           dpipWin.document.body.appendChild(iframeClone);
-          showToast('Iframe PiP (Document PiP)');
-          return { ok:true, extra:{ mode:'iframe-dpip', support } };
-        } catch (err:any) {
-          showToast('No media & iframe DPiP failed');
-          return { ok:false, reason:'no-media-and-iframe-dpip-failed:'+(err?.message||'unknown'), extra:{ support } };
+          showToast("Iframe PiP (Document PiP)");
+          return { ok: true, extra: { mode: "iframe-dpip", support } };
+        } catch (err: any) {
+          showToast("No media & iframe DPiP failed");
+          return {
+            ok: false,
+            reason:
+              "no-media-and-iframe-dpip-failed:" + (err?.message || "unknown"),
+            extra: { support },
+          };
         }
       }
       showToast("No canvas/video found");
       return {
         ok: false,
         reason: "no-canvas-or-video",
-        extra: { support, canvases: aggregate.canvases.length, videos: aggregate.videos.length },
+        extra: {
+          support,
+          canvases: aggregate.canvases.length,
+          videos: aggregate.videos.length,
+        },
       };
     }
 
