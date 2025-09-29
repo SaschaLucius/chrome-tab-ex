@@ -7,6 +7,8 @@ interface PiPResult {
   extra?: any;
 }
 
+interface InteractiveResult extends PiPResult {}
+
 function showToast(msg: string) {
   const existing = document.getElementById("__gt_canvas_pip_toast");
   if (existing) existing.remove();
@@ -291,14 +293,229 @@ async function startCanvasPiP(): Promise<PiPResult> {
   }
 }
 
+// Interactive (Document Picture-in-Picture) implementation
+async function startInteractivePiP(): Promise<InteractiveResult> {
+  try {
+    if (!(window as any).documentPictureInPicture?.requestWindow) {
+      showToast("Document PiP not supported");
+      return { ok: false, reason: "document-pip-unsupported" };
+    }
+    // Reuse canvas selection logic (largest visible canvas) or fallback to video snapshot
+    const canvases = Array.from(
+      document.querySelectorAll("canvas")
+    ) as HTMLCanvasElement[];
+    const visible = canvases.filter((c) => {
+      const r = c.getBoundingClientRect();
+      const s = getComputedStyle(c);
+      return (
+        r.width > 0 &&
+        r.height > 0 &&
+        s.display !== "none" &&
+        s.visibility !== "hidden"
+      );
+    });
+    let sourceCanvas: HTMLCanvasElement | null = null;
+    if (visible.length) {
+      sourceCanvas = visible.sort(
+        (a, b) => b.width * b.height - a.width * a.height
+      )[0];
+    }
+    // If no canvas, attempt to derive one by drawing current video frame (if any)
+    if (!sourceCanvas) {
+      const videos = Array.from(
+        document.querySelectorAll("video")
+      ) as HTMLVideoElement[];
+      const vVisible = videos.filter((v) => {
+        const r = v.getBoundingClientRect();
+        const s = getComputedStyle(v);
+        return (
+          r.width > 0 &&
+          r.height > 0 &&
+          s.display !== "none" &&
+          s.visibility !== "hidden"
+        );
+      });
+      if (vVisible.length) {
+        const vid = vVisible.sort(
+          (a, b) => b.videoWidth * b.videoHeight - a.videoWidth * a.videoHeight
+        )[0];
+        // Create an offscreen canvas to mirror video frames
+        const off = document.createElement("canvas");
+        off.width =
+          vid.videoWidth ||
+          Math.round(vid.getBoundingClientRect().width) ||
+          640;
+        off.height =
+          vid.videoHeight ||
+          Math.round(vid.getBoundingClientRect().height) ||
+          360;
+        const octx = off.getContext("2d");
+        try {
+          octx?.drawImage(vid, 0, 0, off.width, off.height);
+        } catch {}
+        sourceCanvas = off;
+        // Continuous mirror
+        const mirror = () => {
+          if (!documentPictureInPictureWindowOpen()) return; // stop when closed
+          try {
+            octx?.drawImage(vid, 0, 0, off.width, off.height);
+          } catch {}
+          requestAnimationFrame(mirror);
+        };
+        requestAnimationFrame(mirror);
+      }
+    }
+    if (!sourceCanvas) {
+      // Full-page fallback: clone body into the PiP window (interactive) if allowed.
+      // Approach: We'll create a temporary offscreen canvas to snapshot (first frame) while the live DOM will actually be reproduced in DPiP window.
+      // For simplicity we just treat the original body scroll region as the "sourceCanvas" dimensions proxy.
+      const w = Math.max(
+        document.documentElement.clientWidth,
+        window.innerWidth || 800
+      );
+      const h = Math.max(
+        document.documentElement.clientHeight,
+        window.innerHeight || 600
+      );
+      const off = document.createElement("canvas");
+      off.width = w;
+      off.height = h;
+      const octx = off.getContext("2d");
+      // We cannot draw DOM directly; keep blank. We'll still open DPiP and populate with cloned DOM.
+      sourceCanvas = off;
+      const pipWin: Window = await (
+        window as any
+      ).documentPictureInPicture.requestWindow({
+        width: Math.min(Math.max(300, Math.round(w * 0.5)), 1200),
+        height: Math.min(Math.max(200, Math.round(h * 0.5)), 900),
+      });
+      pipWin.document.title = "Interactive PiP - Page";
+      pipWin.document.body.style.cssText =
+        "margin:0;overflow:auto;background:#111;color:#eee;font:12px sans-serif;";
+      // Deep clone (styles via inline copy of computed for top-level is heavy; we'll copy just body children outerHTML for performance)
+      // WARNING: Scripts will re-run if inline; acceptable for experimental feature. Could sanitize if needed.
+      const container = pipWin.document.createElement("div");
+      container.style.cssText = "transform-origin:top left;";
+      // Scale down if very large
+      const scale = 1; // Potential improvement: dynamic scale for large pages.
+      container.style.transform = `scale(${scale})`;
+      // Copy body innerHTML (risk: relative resource paths load again)
+      container.innerHTML = document.body.innerHTML;
+      pipWin.document.body.appendChild(container);
+      // (Minimize & title logic removed per user request.)
+      showToast("Full page Interactive PiP");
+      return { ok: true, extra: { mode: "interactive-fullpage" } };
+    }
+    const rect = sourceCanvas.getBoundingClientRect();
+    const pipWin: Window = await (
+      window as any
+    ).documentPictureInPicture.requestWindow({
+      width: Math.max(200, Math.round(rect.width)),
+      height: Math.max(150, Math.round(rect.height)),
+    });
+
+    pipWin.document.title = "Interactive PiP";
+    pipWin.document.body.style.cssText =
+      "margin:0;background:#111;display:flex;align-items:center;justify-content:center;overflow:hidden;";
+    const mirrorCanvas = pipWin.document.createElement("canvas");
+    mirrorCanvas.width = sourceCanvas.width;
+    mirrorCanvas.height = sourceCanvas.height;
+    mirrorCanvas.style.width = "100%";
+    mirrorCanvas.style.height = "100%";
+    mirrorCanvas.style.imageRendering = "pixelated";
+    pipWin.document.body.appendChild(mirrorCanvas);
+    const mctx = mirrorCanvas.getContext("2d");
+
+    let open = true;
+    pipWin.addEventListener("pagehide", () => {
+      open = false;
+    });
+    function documentPictureInPictureWindowOpen() {
+      return open;
+    }
+
+    const copyFrame = () => {
+      if (!open) return;
+      try {
+        mctx?.drawImage(
+          sourceCanvas!,
+          0,
+          0,
+          mirrorCanvas.width,
+          mirrorCanvas.height
+        );
+      } catch {}
+      requestAnimationFrame(copyFrame);
+    };
+    requestAnimationFrame(copyFrame);
+
+    // Event forwarding (pointer + wheel + key) back to original canvas element
+    const forwardPointer = (type: string, ev: PointerEvent) => {
+      const scaleX = sourceCanvas!.width / mirrorCanvas.clientWidth;
+      const scaleY = sourceCanvas!.height / mirrorCanvas.clientHeight;
+      const canvasRect = sourceCanvas!.getBoundingClientRect();
+      const clientX = canvasRect.left + ev.offsetX * scaleX;
+      const clientY = canvasRect.top + ev.offsetY * scaleY;
+      const clone = new PointerEvent(type, {
+        bubbles: true,
+        clientX,
+        clientY,
+        pointerId: ev.pointerId,
+        pointerType: ev.pointerType,
+        buttons: ev.buttons,
+        ctrlKey: ev.ctrlKey,
+        shiftKey: ev.shiftKey,
+        altKey: ev.altKey,
+        metaKey: ev.metaKey,
+      });
+      sourceCanvas!.dispatchEvent(clone);
+    };
+    ["pointerdown", "pointermove", "pointerup", "pointercancel"].forEach(
+      (t) => {
+        mirrorCanvas.addEventListener(t, (e: any) => forwardPointer(t, e), {
+          passive: true,
+        });
+      }
+    );
+    mirrorCanvas.addEventListener(
+      "wheel",
+      (e) => {
+        const wheelEvt = new WheelEvent("wheel", e);
+        sourceCanvas!.dispatchEvent(wheelEvt);
+      },
+      { passive: true }
+    );
+    pipWin.addEventListener("keydown", (e: KeyboardEvent) => {
+      const keyEvt = new KeyboardEvent(e.type, e);
+      sourceCanvas!.dispatchEvent(keyEvt);
+    });
+
+    // (Minimize & title logic removed per user request.)
+
+    showToast("Interactive PiP opened");
+    return { ok: true, extra: { mode: "interactive-dpip" } };
+  } catch (err: any) {
+    showToast("Interactive PiP failed");
+    return {
+      ok: false,
+      reason: "interactive-exception:" + (err?.message || "unknown"),
+    };
+  }
+}
+
 // Message listener (using window for isolation). In MV3, chrome.runtime.onMessage also available.
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg && msg.type === "START_CANVAS_PIP") {
     startCanvasPiP().then(sendResponse);
     return true; // async
   }
+  if (msg && msg.type === "START_INTERACTIVE_PIP") {
+    startInteractivePiP().then(sendResponse);
+    return true;
+  }
   return false;
 });
 
 // Optionally expose for console debugging
 (window as any).__startCanvasPiP = startCanvasPiP;
+(window as any).__startInteractivePiP = startInteractivePiP;
