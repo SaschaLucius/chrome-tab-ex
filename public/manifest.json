@@ -36,6 +36,11 @@
       "matches": ["http://*/*", "https://*/*"],
       "js": ["/js/canvasPiPContent.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["/js/elementPiPContent.js"],
+      "run_at": "document_idle"
     }
   ]
 }

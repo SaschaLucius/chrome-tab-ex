@@ -29,6 +29,7 @@ function groupTabs() {
   const mergeWindows = <HTMLElement>document.getElementById("mergeWindows");
   const canvasPiP = <HTMLElement>document.getElementById("canvasPiP");
   const interactivePiP = <HTMLElement>document.getElementById("interactivePiP");
+  const elementPiP = <HTMLElement>document.getElementById("elementPiP");
   const restoreLastClosedTabs = <HTMLElement>(
     document.getElementById("restoreLastClosedTabs")
   );
@@ -342,6 +343,106 @@ function groupTabs() {
         type: "basic",
         iconUrl: "/images/gt_icon48.png",
         title: "Interactive PiP error",
+        message: (error as Error).message || "Unknown error",
+      });
+    }
+  });
+
+  /**
+   * action for "Select Element PiP"
+   */
+  elementPiP.addEventListener("click", async () => {
+    try {
+      const [activeTab] = await ct.getActiveTab();
+      if (!activeTab || activeTab.id == null) return;
+      const tabId = activeTab.id;
+      const response = await new Promise<any>((resolve) => {
+        let done = false;
+        const timeout = setTimeout(() => {
+          if (done) return;
+          done = true;
+          resolve({ ok: false, reason: "timeout-waiting-response" });
+        }, 4000);
+        chrome.tabs.sendMessage(
+          tabId,
+          { type: "START_ELEMENT_PIP" },
+          (resp) => {
+            if (done) return;
+            done = true;
+            clearTimeout(timeout);
+            if (chrome.runtime.lastError) {
+              const msg = chrome.runtime.lastError.message || "";
+              if (
+                msg.includes("Could not establish connection") ||
+                msg.includes("Receiving end does not exist")
+              ) {
+                (async () => {
+                  try {
+                    await chrome.scripting.executeScript({
+                      target: { tabId },
+                      files: ["js/elementPiPContent.js"],
+                    });
+                    setTimeout(() => {
+                      chrome.tabs.sendMessage(
+                        tabId,
+                        { type: "START_ELEMENT_PIP" },
+                        (second) => {
+                          if (chrome.runtime.lastError) {
+                            resolve({
+                              ok: false,
+                              reason:
+                                "inject-retry-error:" +
+                                chrome.runtime.lastError.message,
+                            });
+                          } else {
+                            resolve(
+                              second || {
+                                ok: false,
+                                reason: "no-response-after-inject",
+                              }
+                            );
+                          }
+                        }
+                      );
+                    }, 120);
+                  } catch (injErr) {
+                    resolve({
+                      ok: false,
+                      reason: "inject-failed:" + (injErr as Error).message,
+                    });
+                  }
+                })();
+                return;
+              }
+              resolve({ ok: false, reason: "sendMessage-error:" + msg });
+              return;
+            }
+            resolve(resp);
+          }
+        );
+      });
+      if (!response || !response.ok) {
+        chrome.notifications.create({
+          type: "basic",
+          iconUrl: "/images/gt_icon48.png",
+          title: "Element PiP failed",
+          message: (response && response.reason) || "unknown",
+        });
+      } else {
+        chrome.notifications.create({
+          type: "basic",
+          iconUrl: "/images/gt_icon48.png",
+          title: "Element PiP",
+          message: "Select element highlighted; click to open PiP",
+        });
+        window.close();
+      }
+    } catch (error) {
+      console.error("Error starting element PiP:", error);
+      chrome.notifications.create({
+        type: "basic",
+        iconUrl: "/images/gt_icon48.png",
+        title: "Element PiP error",
         message: (error as Error).message || "Unknown error",
       });
     }
