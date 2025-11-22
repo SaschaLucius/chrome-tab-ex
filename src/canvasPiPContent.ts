@@ -9,6 +9,8 @@ interface PiPResult {
 
 interface InteractiveResult extends PiPResult {}
 
+interface FullPageResult extends PiPResult {}
+
 function showToast(msg: string) {
   const existing = document.getElementById("__gt_canvas_pip_toast");
   if (existing) existing.remove();
@@ -503,6 +505,80 @@ async function startInteractivePiP(): Promise<InteractiveResult> {
   }
 }
 
+// Full Page Document PiP: clones (lightly) the body into a Document PiP window and keeps it live via mirroring scroll events.
+async function startFullPagePiP(): Promise<FullPageResult> {
+  try {
+    if (!(window as any).documentPictureInPicture?.requestWindow) {
+      showToast("Document PiP not supported");
+      return { ok: false, reason: "document-pip-unsupported" };
+    }
+    const w = Math.max(
+      document.documentElement.clientWidth,
+      window.innerWidth || 800
+    );
+    const h = Math.max(
+      document.documentElement.clientHeight,
+      window.innerHeight || 600
+    );
+    const pipWin: Window = await (
+      window as any
+    ).documentPictureInPicture.requestWindow({
+      width: Math.min(Math.max(400, Math.round(w * 0.6)), 1400),
+      height: Math.min(Math.max(300, Math.round(h * 0.6)), 1000),
+    });
+    pipWin.document.title = "Full Page PiP";
+    pipWin.document.body.style.cssText =
+      "margin:0;background:#111;color:#eee;font:12px sans-serif;overflow:auto;";
+    // Basic style copy (same-origin inline rules)
+    Array.from(document.styleSheets).forEach((ss: any) => {
+      try {
+        const rules = Array.from(ss.cssRules)
+          .map((r: any) => r.cssText)
+          .join("\n");
+        const style = document.createElement("style");
+        style.textContent = rules;
+        pipWin.document.head.appendChild(style);
+      } catch {}
+    });
+    // Clone body shallow HTML (innerHTML) - scripts may re-run; acceptable for feature. Could sanitize.
+    const container = pipWin.document.createElement("div");
+    container.innerHTML = document.body.innerHTML;
+    container.style.minHeight = "100%";
+    pipWin.document.body.appendChild(container);
+    // Sync scroll position both ways (throttled)
+    let syncing = false;
+    const syncFromSource = () => {
+      if (syncing) return;
+      syncing = true;
+      requestAnimationFrame(() => {
+        syncing = false;
+        pipWin.scrollTo({ top: window.scrollY, left: window.scrollX });
+      });
+    };
+    const syncFromPiP = () => {
+      if (syncing) return;
+      syncing = true;
+      requestAnimationFrame(() => {
+        syncing = false;
+        window.scrollTo({ top: pipWin.scrollY, left: pipWin.scrollX });
+      });
+    };
+    window.addEventListener("scroll", syncFromSource, { passive: true });
+    pipWin.addEventListener("scroll", syncFromPiP, { passive: true });
+    pipWin.addEventListener("pagehide", () => {
+      window.removeEventListener("scroll", syncFromSource);
+    });
+    showToast("Full Page PiP opened");
+    return { ok: true, extra: { mode: "fullpage-dpip" } };
+  } catch (err: any) {
+    showToast("Full Page PiP failed");
+    return {
+      ok: false,
+      reason: "fullpage-exception:" + (err?.message || "unknown"),
+    };
+  }
+}
+
 // Message listener (using window for isolation). In MV3, chrome.runtime.onMessage also available.
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg && msg.type === "START_CANVAS_PIP") {
@@ -513,9 +589,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     startInteractivePiP().then(sendResponse);
     return true;
   }
+  if (msg && msg.type === "START_FULLPAGE_PIP") {
+    startFullPagePiP().then(sendResponse);
+    return true;
+  }
   return false;
 });
 
 // Optionally expose for console debugging
 (window as any).__startCanvasPiP = startCanvasPiP;
 (window as any).__startInteractivePiP = startInteractivePiP;
+(window as any).__startFullPagePiP = startFullPagePiP;

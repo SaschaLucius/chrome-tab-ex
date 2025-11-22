@@ -10,6 +10,10 @@ This is a Chrome extension that sorts and groups tabs.
 - Ungroup all tab-groups
 - Remove duplicated tabs
 - Merge all browser windows into the current window
+- Canvas / Video PiP (finds largest visible canvas or video)
+- Interactive Canvas PiP (experimental Document Picture-in-Picture mirror)
+- Element Selection PiP (pick any element then open in PiP)
+- Full Page PiP (opens a live clone of the whole page in a PiP window)
 
 # Development
 
@@ -175,3 +179,16 @@ npm run build
 Install this extension from Chrome Web Store.
 
 [Group Tabs - Chrome Web Store](https://chrome.google.com/webstore/detail/group-tabs/cnmcnafaccboidemenkpfnlgfcejijgm/)
+
+## PiP Features Usage
+
+1. Canvas PiP Overlay: Opens the largest visible <canvas> (or a video fallback) in native Picture-in-Picture.
+2. Interactive PiP: Uses Document Picture-in-Picture to mirror a canvas (or captured video frame) allowing pointer & keyboard events to forward.
+3. Select Element PiP: Lets you hover & click any element; it is moved into a Document PiP window and restored when the window closes (Esc cancels selection).
+4. Full Page PiP: Creates a Document PiP window and clones the current page content for an overview style floating window (scroll positions sync both ways).
+
+Notes:
+
+- Document Picture-in-Picture requires Chromium 116+ and may be experimental behind flags in some channels.
+- Some complex pages with heavy scripts may re-run logic inside full page clone; if issues arise reload the original tab.
+- Element PiP moves the live DOM node; when the PiP window closes the element is restored to its original position.

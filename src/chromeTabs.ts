@@ -321,6 +321,37 @@ export async function getLastClosedTabsInfo(): Promise<ClosedTabSession | null> 
 }
 
 /**
+ * Copy URLs of recently closed tabs to clipboard
+ * @returns Promise<number> Number of URLs copied
+ */
+export async function copyClosedTabUrls(): Promise<number> {
+  try {
+    const history = await getClosedTabsHistory();
+
+    if (history.length === 0) {
+      console.log("No closed tabs to copy");
+      return 0;
+    }
+
+    const lastSession = history[0];
+
+    // Extract URLs from the last closed session
+    const urls = lastSession.tabs.map((tab) => tab.url).join("\n");
+
+    // Copy to clipboard
+    await navigator.clipboard.writeText(urls);
+
+    console.log(
+      `Copied ${lastSession.tabs.length} closed tab URL(s) from action: ${lastSession.action}`
+    );
+    return lastSession.tabs.length;
+  } catch (error) {
+    console.error("Error copying closed tab URLs:", error);
+    throw error;
+  }
+}
+
+/**
  * getAllWindows gets all browser windows
  * @returns Promise<chrome.windows.Window[]>
  */
