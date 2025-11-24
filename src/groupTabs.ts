@@ -23,6 +23,9 @@ function groupTabs() {
   const closeCurrentTab = <HTMLElement>(
     document.getElementById("closeCurrentTab")
   );
+  const closeSelectedTabs = <HTMLElement>(
+    document.getElementById("closeSelectedTabs")
+  );
   const moveCurrentTabToNewWindow = <HTMLElement>(
     document.getElementById("moveCurrentTabToNewWindow")
   );
@@ -566,9 +569,21 @@ function groupTabs() {
   });
 
   /**
-   * action for "Close Selected Tabs"
+   * action for "Close Current Tab"
    */
   closeCurrentTab.addEventListener("click", async () => {
+    try {
+      await ct.closeCurrentTab();
+      // The popup will automatically close when the tab closes
+    } catch (error) {
+      console.error("Error closing current tab:", error);
+    }
+  });
+
+  /**
+   * action for "Close Selected Tabs"
+   */
+  closeSelectedTabs.addEventListener("click", async () => {
     try {
       await ct.closeSelectedTabs();
       // The popup will automatically close when the tab closes

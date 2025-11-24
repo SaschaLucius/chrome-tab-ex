@@ -571,6 +571,27 @@ export async function moveSelectedTabsToNewWindow(): Promise<chrome.windows.Wind
 }
 
 /**
+ * closeCurrentTab closes only the current active tab
+ * @returns Promise<number> Number of tabs closed (always 1 or 0)
+ */
+export async function closeCurrentTab(): Promise<number> {
+  try {
+    const [activeTab] = await getActiveTab();
+
+    if (!activeTab) {
+      throw new Error("No active tab found to close");
+    }
+
+    // Use the common close function with history tracking
+    const closedCount = await closeTabsWithHistory(activeTab, "closeCurrent");
+    return closedCount;
+  } catch (error) {
+    console.error("Error closing current tab:", error);
+    throw error;
+  }
+}
+
+/**
  * closeSelectedTabs closes the selected tabs
  * If no tabs are selected, closes the current active tab
  * @returns Promise<number> Number of tabs closed
