@@ -24,6 +24,7 @@
       "128": "/images/gt_icon128.png"
     }
   },
+  "options_page": "options.html",
   "icons": {
     "16": "/images/gt_icon16.png",
     "32": "/images/gt_icon32.png",

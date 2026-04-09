@@ -232,3 +232,88 @@ function TestGetURLWithoutParameters() {
 }
 
 TestGetURLWithoutParameters();
+
+type GroupingKeyCase = {
+  name: string;
+  url: string;
+  domainName: string;
+  rules: { host: string; pathDepth: number }[];
+  expect: string;
+};
+
+function TestGetGroupingKey() {
+  const cases: GroupingKeyCase[] = [
+    {
+      name: "no rules, returns domain as-is",
+      url: "https://docs.google.com/document/d/123",
+      domainName: "docs.google",
+      rules: [],
+      expect: "docs.google",
+    },
+    {
+      name: "matching rule with pathDepth 1",
+      url: "https://docs.google.com/document/d/123",
+      domainName: "docs.google",
+      rules: [{ host: "docs.google.com", pathDepth: 1 }],
+      expect: "docs.google/document",
+    },
+    {
+      name: "matching rule with pathDepth 2",
+      url: "https://docs.google.com/document/d/123",
+      domainName: "docs.google",
+      rules: [{ host: "docs.google.com", pathDepth: 2 }],
+      expect: "docs.google/document/d",
+    },
+    {
+      name: "matching rule, spreadsheets path",
+      url: "https://docs.google.com/spreadsheets/d/456",
+      domainName: "docs.google",
+      rules: [{ host: "docs.google.com", pathDepth: 1 }],
+      expect: "docs.google/spreadsheets",
+    },
+    {
+      name: "non-matching rule, returns domain",
+      url: "https://github.com/user/repo",
+      domainName: "github",
+      rules: [{ host: "docs.google.com", pathDepth: 1 }],
+      expect: "github",
+    },
+    {
+      name: "empty domain returns empty",
+      url: "https://example.com/path",
+      domainName: "",
+      rules: [{ host: "example.com", pathDepth: 1 }],
+      expect: "",
+    },
+    {
+      name: "URL with no path segments",
+      url: "https://docs.google.com",
+      domainName: "docs.google",
+      rules: [{ host: "docs.google.com", pathDepth: 1 }],
+      expect: "docs.google",
+    },
+    {
+      name: "rule matches subdomain via endsWith",
+      url: "https://sub.docs.google.com/document/d/123",
+      domainName: "sub.docs.google",
+      rules: [{ host: "docs.google.com", pathDepth: 1 }],
+      expect: "sub.docs.google/document",
+    },
+    {
+      name: "URL with query params still extracts path",
+      url: "https://docs.google.com/document/d/123?edit=true",
+      domainName: "docs.google",
+      rules: [{ host: "docs.google.com", pathDepth: 1 }],
+      expect: "docs.google/document",
+    },
+  ];
+
+  cases.forEach((c) => {
+    test(c.name, () => {
+      const key = url.getGroupingKey(c.url, c.domainName, c.rules);
+      expect(key).toBe(c.expect);
+    });
+  });
+}
+
+TestGetGroupingKey();

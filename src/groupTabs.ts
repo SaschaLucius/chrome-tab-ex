@@ -1,6 +1,7 @@
 import * as url from "./url";
 import * as ct from "./chromeTabs";
 import * as ctg from "./chromeTabGroups";
+import { getGroupingRules } from "./customRules";
 
 function groupTabs() {
   const sortTabs = <HTMLElement>document.getElementById("sortTabs");
@@ -69,16 +70,18 @@ function groupTabs() {
     const tabs = await ct.queryTabs(targetTabConditions);
     const [activeTab] = await ct.getActiveTab();
     const pinnedTabs = await ct.getPinnedTabs();
+    const rules = await getGroupingRules();
     const domainMap: { [key: string]: number[] } = {};
     const domains: string[] = [];
     for (let i = 0; i < tabs.length; i++) {
       const domain = url.getDomainName(<string>tabs[i].url);
-      if (domain === "") continue;
-      if (!domainMap[domain]) {
-        domainMap[domain] = [];
-        domains.push(domain);
+      const key = url.getGroupingKey(<string>tabs[i].url, domain, rules);
+      if (key === "") continue;
+      if (!domainMap[key]) {
+        domainMap[key] = [];
+        domains.push(key);
       }
-      domainMap[domain].push(<number>tabs[i].id);
+      domainMap[key].push(<number>tabs[i].id);
     }
     runGroupTabs(domains, domainMap, pinnedTabs, activeTab);
   });
@@ -91,16 +94,18 @@ function groupTabs() {
     const tabs = await ct.queryTabs(targetTabConditions);
     const [activeTab] = await ct.getActiveTab();
     const pinnedTabs = await ct.getPinnedTabs();
+    const rules = await getGroupingRules();
     const domainMap: { [key: string]: number[] } = {};
     const domains: string[] = [];
     for (let i = 0; i < tabs.length; i++) {
       const domain = url.getDomainNameIgnoreSubDomain(<string>tabs[i].url);
-      if (domain === "") continue;
-      if (!domainMap[domain]) {
-        domainMap[domain] = [];
-        domains.push(domain);
+      const key = url.getGroupingKey(<string>tabs[i].url, domain, rules);
+      if (key === "") continue;
+      if (!domainMap[key]) {
+        domainMap[key] = [];
+        domains.push(key);
       }
-      domainMap[domain].push(<number>tabs[i].id);
+      domainMap[key].push(<number>tabs[i].id);
     }
     runGroupTabs(domains, domainMap, pinnedTabs, activeTab);
   });

@@ -1,4 +1,51 @@
 import * as tld from "./tld";
+import { GroupingRule } from "./customRules";
+
+/**
+ * getHost extracts the hostname from a URL (with www stripped).
+ */
+function getHost(urlStr: string): string {
+  const m = urlStr.match(/https?:\/\/([^/]*)/);
+  if (!m || !m[1]) return "";
+  return m[1].replace(/^www\d?\./i, "");
+}
+
+/**
+ * getPathSegments extracts path segments from a URL.
+ * e.g. "https://docs.google.com/document/d/123" → ["document", "d", "123"]
+ */
+function getPathSegments(urlStr: string): string[] {
+  const m = urlStr.match(/https?:\/\/[^/]+(\/.*?)(?:\?|#|$)/);
+  if (!m || !m[1]) return [];
+  return m[1].split("/").filter((s) => s !== "");
+}
+
+/**
+ * getGroupingKey returns the grouping key for a URL, considering custom rules.
+ * If a rule matches the URL's host, the first N path segments are appended.
+ * @param urlStr The URL to get the grouping key for
+ * @param domainName The already-computed domain name (from getDomainName or getDomainNameIgnoreSubDomain)
+ * @param rules Custom grouping rules
+ */
+export function getGroupingKey(
+  urlStr: string,
+  domainName: string,
+  rules: GroupingRule[]
+): string {
+  if (domainName === "") return "";
+  const host = getHost(urlStr);
+  for (const rule of rules) {
+    if (host === rule.host || host.endsWith("." + rule.host)) {
+      const segments = getPathSegments(urlStr);
+      const pathParts = segments.slice(0, rule.pathDepth);
+      if (pathParts.length > 0) {
+        return domainName + "/" + pathParts.join("/");
+      }
+      break;
+    }
+  }
+  return domainName;
+}
 
 /**
  * getDomainName returns domain name part of the url.
