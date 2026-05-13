@@ -7,6 +7,7 @@ import { GroupingRule } from "./customRules";
  */
 const defaultRules: GroupingRule[] = [
   { host: "docs.google.com", pathDepth: 1 },
+  { host: "atlassian.net", pathDepth: 1 },
   // Add more default rules below:
   // { host: "github.com", pathDepth: 1 },
 ];
