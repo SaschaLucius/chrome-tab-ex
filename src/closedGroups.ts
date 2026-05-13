@@ -9,7 +9,9 @@ function timeAgo(timestamp: number): string {
   return `${days}d ago`;
 }
 
-type WindowSession = chrome.sessions.Session & { window: chrome.windows.Window };
+type WindowSession = chrome.sessions.Session & {
+  window: chrome.windows.Window;
+};
 
 function getWindowSessions(): Promise<WindowSession[]> {
   return new Promise((resolve) => {
@@ -18,7 +20,7 @@ function getWindowSessions(): Promise<WindowSession[]> {
       (sessions) => {
         resolve(
           sessions.filter(
-            (s): s is WindowSession => !!s.window && !!(s.window.tabs?.length)
+            (s): s is WindowSession => !!s.window && !!s.window.tabs?.length
           )
         );
       }
@@ -65,7 +67,9 @@ function renderList(sessions: WindowSession[]): void {
 
     const metaEl = document.createElement("span");
     metaEl.className = "recordMeta";
-    metaEl.textContent = `${tabCount} tab${tabCount === 1 ? "" : "s"} · ${timeAgo(timestamp)}`;
+    metaEl.textContent = `${tabCount} tab${
+      tabCount === 1 ? "" : "s"
+    } · ${timeAgo(timestamp)}`;
     headerEl.appendChild(metaEl);
 
     const actionsEl = document.createElement("div");
