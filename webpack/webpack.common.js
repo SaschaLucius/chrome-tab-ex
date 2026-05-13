@@ -10,6 +10,7 @@ module.exports = {
     canvasPiPContent: path.join(srcDir, "canvasPiPContent.ts"),
     elementPiPContent: path.join(srcDir, "elementPiPContent.ts"),
     options: path.join(srcDir, "options.ts"),
+    closedGroups: path.join(srcDir, "closedGroups.ts"),
   },
   output: {
     path: path.join(__dirname, "../dist/js"),

@@ -41,6 +41,9 @@ function groupTabs() {
   const copyClosedTabUrls = <HTMLElement>(
     document.getElementById("copyClosedTabUrls")
   );
+  const viewClosedGroups = <HTMLElement>(
+    document.getElementById("viewClosedGroups")
+  );
   const targetTabConditions: chrome.tabs.QueryInfo = {
     currentWindow: true,
     pinned: false,
@@ -678,6 +681,11 @@ function groupTabs() {
         message: "Failed to copy closed tab URLs",
       });
     }
+  });
+
+  viewClosedGroups.addEventListener("click", () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL("closedGroups.html") });
+    window.close();
   });
 
   const sortTabsByURL = async () => {

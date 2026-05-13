@@ -13,7 +13,8 @@
     "storage",
     "notifications",
     "scripting",
-    "activeTab"
+    "activeTab",
+    "sessions"
   ],
   "action": {
     "default_popup": "menu.html",

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Closed Windows</title>
+  <link rel="stylesheet" href="/css/gt.css">
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      font-size: 13px;
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      color: #222;
+      min-width: 480px;
+    }
+    #header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-bottom: 1px solid #ddd;
+      background: #f8f8f8;
+    }
+    #header h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    #clearAll {
+      display: none;
+    }
+    #emptyMsg {
+      padding: 24px;
+      color: #888;
+      text-align: center;
+    }
+    .record {
+      border-bottom: 1px solid #eee;
+    }
+    .recordHeader {
+      display: flex;
+      align-items: center;
+      padding: 8px 14px;
+      cursor: pointer;
+      gap: 8px;
+    }
+    .recordHeader:hover { background: #f0f0f0; }
+    .typeIcon {
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .recordTitle {
+      flex: 1;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .recordMeta {
+      font-size: 11px;
+      color: #666;
+      white-space: nowrap;
+    }
+    .colorDot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+    .recordActions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .btnRestore, .btnRemove {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 3px;
+      cursor: pointer;
+      border: 1px solid;
+    }
+    .btnRestore {
+      color: #0a0;
+      border-color: #0a0;
+      background: none;
+    }
+    .btnRestore:hover { background: #efe; }
+    .btnRemove {
+      color: #a00;
+      border-color: #a00;
+      background: none;
+    }
+    .btnRemove:hover { background: #fee; }
+    .tabList {
+      display: none;
+      background: #fafafa;
+      border-top: 1px solid #eee;
+    }
+    .tabList.expanded { display: block; }
+    .tabItem {
+      display: flex;
+      align-items: center;
+      padding: 4px 28px;
+      gap: 7px;
+      font-size: 12px;
+      color: #444;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .tabItem img {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+    .tabItemTitle {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+    .tabItemUrl {
+      color: #888;
+      font-size: 11px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 220px;
+    }
+
+    /* Tab group color dots */
+    .color-grey   { background: #888; }
+    .color-yellow { background: #e8a000; }
+    .color-green  { background: #0a0; }
+    .color-cyan   { background: #0aa; }
+    .color-blue   { background: #00a; }
+    .color-purple { background: #80a; }
+    .color-pink   { background: #d0a; }
+    .color-red    { background: #c00; }
+  </style>
+</head>
+<body>
+  <div id="header">
+    <h1>Closed Windows</h1>
+  </div>
+  <div id="list"></div>
+  <div id="emptyMsg" style="display:none">No closed windows in recent history.</div>
+
+  <script src="/js/closedGroups.js"></script>
+</body>
+</html>
