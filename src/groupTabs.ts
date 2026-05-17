@@ -131,7 +131,7 @@ function groupTabs() {
     });
     const tabIDs: number[] = [];
     for (let i = 0; i < tabs.length; i++) {
-      if (tabs[i].groupId === undefined) continue;
+      if (tabs[i].groupId === chrome.tabGroups.TAB_GROUP_ID_NONE) continue;
       tabIDs.push(<number>tabs[i].id);
     }
     ct.ungroupTabs(tabIDs);

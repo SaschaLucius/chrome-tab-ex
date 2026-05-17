@@ -1,7 +1,7 @@
 {
   "name": "Group Tabs",
   "description": "Group tabs by domain.",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "manifest_version": 3,
   "background": {
     "service_worker": "js/background.js"

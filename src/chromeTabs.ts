@@ -134,15 +134,15 @@ export function sortTabsByDomainNameIgnoreSubDomain(
  * moveTabs moves tabs.
  * @param tabs
  */
-export function moveTabs(tabs: chrome.tabs.Tab[]): void {
+export async function moveTabs(tabs: chrome.tabs.Tab[]): Promise<void> {
   let i = 0;
-  tabs.forEach((tab) => {
+  for (const tab of tabs) {
     if (tab.id === undefined) {
-      return;
+      continue;
     }
-    chrome.tabs.move(tab.id, { index: i });
+    await chrome.tabs.move(tab.id, { index: i });
     i++;
-  });
+  }
 }
 
 export function groupTabs(tabIDs: number[]): Promise<number> {
@@ -283,12 +283,19 @@ export async function restoreLastClosedTabs(): Promise<number> {
 
     for (const tabInfo of sortedTabs) {
       try {
-        const newTab = await chrome.tabs.create({
+        const createProps: chrome.tabs.CreateProperties = {
           url: tabInfo.url,
           index: tabInfo.index,
-          windowId: tabInfo.windowId,
           active: false, // Don't activate each tab as it's created
-        });
+        };
+        // Only set windowId if the window still exists
+        try {
+          await chrome.windows.get(tabInfo.windowId);
+          createProps.windowId = tabInfo.windowId;
+        } catch {
+          // Original window no longer exists, create in current window
+        }
+        const newTab = await chrome.tabs.create(createProps);
 
         // If the tab was in a group, we could potentially restore the group
         // but this is complex and may not be necessary for the initial implementation

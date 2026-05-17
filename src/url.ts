@@ -69,7 +69,7 @@ export function getDomainName(url: string): string {
 
   const idx = domainName.indexOf("/");
   if (idx > 0) {
-    domainName = domainName.substr(0, idx);
+    domainName = domainName.substring(0, idx);
   }
 
   let removeRes = tld.removeSecondLevelDomain(domainName);
@@ -84,7 +84,7 @@ export function getDomainName(url: string): string {
 
   const lastDotIdx = domainName.lastIndexOf(".");
   if (lastDotIdx > 0) {
-    domainName = domainName.substr(0, lastDotIdx);
+    domainName = domainName.substring(0, lastDotIdx);
   }
 
   return domainName;
@@ -104,7 +104,7 @@ export function getDomainNameIgnoreSubDomain(url: string): string {
   if (lastDotIdx < 0) {
     return fullDomainName;
   }
-  return fullDomainName.substr(lastDotIdx + 1);
+  return fullDomainName.substring(lastDotIdx + 1);
 }
 
 /**
