@@ -11,6 +11,7 @@ module.exports = {
     elementPiPContent: path.join(srcDir, "elementPiPContent.ts"),
     options: path.join(srcDir, "options.ts"),
     closedGroups: path.join(srcDir, "closedGroups.ts"),
+    autoClosedTabs: path.join(srcDir, "autoClosedTabs.ts"),
   },
   output: {
     path: path.join(__dirname, "../dist/js"),

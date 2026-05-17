@@ -688,6 +688,14 @@ function groupTabs() {
     window.close();
   });
 
+  const viewAutoClosedTabs = <HTMLElement>(
+    document.getElementById("viewAutoClosedTabs")
+  );
+  viewAutoClosedTabs.addEventListener("click", () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL("autoClosedTabs.html") });
+    window.close();
+  });
+
   const sortTabsByURL = async () => {
     const tabs = await ct.queryTabs(targetTabConditions);
     const sorted = ct.sortTabsByURL(tabs);

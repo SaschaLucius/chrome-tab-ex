@@ -14,7 +14,8 @@
     "notifications",
     "scripting",
     "activeTab",
-    "sessions"
+    "sessions",
+    "alarms"
   ],
   "action": {
     "default_popup": "menu.html",
