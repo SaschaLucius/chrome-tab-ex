@@ -61,7 +61,9 @@ async function updateBadge(): Promise<void> {
     const tabs = await chrome.tabs.query({});
     const count = tabs.length;
     chrome.action.setBadgeText({ text: count.toString() });
-    chrome.action.setBadgeBackgroundColor({ color: count > 50 ? "#e53935" : count > 20 ? "#fb8c00" : "#616161" });
+    chrome.action.setBadgeBackgroundColor({
+      color: count > 50 ? "#e53935" : count > 20 ? "#fb8c00" : "#616161",
+    });
   } catch (error) {
     console.error("Error updating badge:", error);
   }
@@ -78,7 +80,8 @@ async function checkInactiveTabs(): Promise<void> {
       if (!tab.id || !tab.url) continue;
       // Skip pinned, active, or non-http tabs
       if (tab.pinned || tab.active) continue;
-      if (!tab.url.startsWith("http://") && !tab.url.startsWith("https://")) continue;
+      if (!tab.url.startsWith("http://") && !tab.url.startsWith("https://"))
+        continue;
 
       const lastAccessed = data[tab.id.toString()] || 0;
       if (lastAccessed === 0) continue;
@@ -234,17 +237,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   if (request.action === "restoreAutoClosedTab") {
     const { url, index } = request;
-    chrome.tabs.create({ url, active: true }).then(async () => {
-      // Remove from auto-closed list
-      const tabs = await getAutoClosedTabs();
-      if (index >= 0 && index < tabs.length) {
-        tabs.splice(index, 1);
-        await saveAutoClosedTabs(tabs);
-      }
-      sendResponse({ ok: true });
-    }).catch((error) => {
-      sendResponse({ error: error.message });
-    });
+    chrome.tabs
+      .create({ url, active: true })
+      .then(async () => {
+        // Remove from auto-closed list
+        const tabs = await getAutoClosedTabs();
+        if (index >= 0 && index < tabs.length) {
+          tabs.splice(index, 1);
+          await saveAutoClosedTabs(tabs);
+        }
+        sendResponse({ ok: true });
+      })
+      .catch((error) => {
+        sendResponse({ error: error.message });
+      });
     return true;
   }
   if (request.action === "clearAutoClosedTabs") {
