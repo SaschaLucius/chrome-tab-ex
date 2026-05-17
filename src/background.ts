@@ -1,4 +1,8 @@
 // Background script to track tab activity
+import { getDomainName, getGroupingKey } from "./url";
+import { getGroupingRules } from "./customRules";
+import { groupColors } from "./chromeTabGroups";
+
 interface TabActivity {
   [tabId: string]: number; // timestamp when tab was last accessed
 }
@@ -260,3 +264,81 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 });
+
+// --- Context Menu: Group tabs by domain ---
+
+const CONTEXT_MENU_ID = "groupTabsByDomain";
+
+function createContextMenu(): void {
+  chrome.contextMenus.create({
+    id: CONTEXT_MENU_ID,
+    title: "Group all tabs from this domain",
+    contexts: ["page"],
+  });
+}
+
+chrome.runtime.onInstalled.addListener(() => {
+  createContextMenu();
+});
+
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (info.menuItemId !== CONTEXT_MENU_ID) return;
+  if (!tab || !tab.url || !tab.id || !tab.windowId) return;
+
+  const domain = getDomainName(tab.url);
+  if (!domain) return;
+
+  const rules = await getGroupingRules();
+
+  // Find all tabs across ALL windows with the same domain
+  const allTabs = await chrome.tabs.query({
+    pinned: false,
+    url: ["http://*/*", "https://*/*"],
+  });
+
+  // Move matching tabs from other windows into the current window first
+  const currentWindowId = tab.windowId;
+  const otherWindowTabIds: number[] = [];
+  const currentWindowTabIds: number[] = [];
+
+  for (const t of allTabs) {
+    if (!t.url || !t.id) continue;
+    const tabDomain = getDomainName(t.url);
+    if (tabDomain === domain) {
+      if (t.windowId === currentWindowId) {
+        currentWindowTabIds.push(t.id);
+      } else {
+        otherWindowTabIds.push(t.id);
+      }
+    }
+  }
+
+  // Move tabs from other windows into current window
+  if (otherWindowTabIds.length > 0) {
+    await chrome.tabs.move(otherWindowTabIds, {
+      windowId: currentWindowId,
+      index: -1,
+    });
+  }
+
+  const matchingTabIds = [...currentWindowTabIds, ...otherWindowTabIds];
+  if (matchingTabIds.length < 2) return;
+
+  const groupID = await chrome.tabs.group({ tabIds: matchingTabIds });
+  const key = getGroupingKey(tab.url, domain, rules);
+  const colorIdx = Math.abs(hashCode(key)) % groupColors.length;
+
+  await chrome.tabGroups.update(groupID, {
+    collapsed: false,
+    title: key,
+    color: groupColors[colorIdx],
+  });
+});
+
+function hashCode(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+  }
+  return hash;
+}

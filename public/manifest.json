@@ -15,7 +15,8 @@
     "scripting",
     "activeTab",
     "sessions",
-    "alarms"
+    "alarms",
+    "contextMenus"
   ],
   "action": {
     "default_popup": "menu.html",
