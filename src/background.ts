@@ -2,6 +2,7 @@
 import { getDomainName, getGroupingKey } from "./url";
 import { getGroupingRules } from "./customRules";
 import { groupColors } from "./chromeTabGroups";
+import { moveTabIdsToNewWindow } from "./chromeTabs";
 
 interface TabActivity {
   [tabId: string]: number; // timestamp when tab was last accessed
@@ -268,11 +269,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // --- Context Menu: Group tabs by domain ---
 
 const CONTEXT_MENU_ID = "groupTabsByDomain";
+const CONTEXT_MENU_MOVE_ID = "moveTabToNewWindow";
 
 function createContextMenu(): void {
   chrome.contextMenus.create({
     id: CONTEXT_MENU_ID,
     title: "Group all tabs from this domain",
+    contexts: ["page"],
+  });
+  chrome.contextMenus.create({
+    id: CONTEXT_MENU_MOVE_ID,
+    title: "Move this tab to a new window",
     contexts: ["page"],
   });
 }
@@ -282,6 +289,16 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (info.menuItemId === CONTEXT_MENU_MOVE_ID) {
+    if (!tab?.id) return;
+    try {
+      await moveTabIdsToNewWindow([tab.id]);
+    } catch (error) {
+      console.error("Error moving tab to new window:", error);
+    }
+    return;
+  }
+
   if (info.menuItemId !== CONTEXT_MENU_ID) return;
   if (!tab || !tab.url || !tab.id || !tab.windowId) return;
 

@@ -529,6 +529,28 @@ export async function copyAllUrlsToClipboard(): Promise<void> {
 }
 
 /**
+ * moveTabIdsToNewWindow moves the given tab IDs to a new browser window.
+ * @param tabIds Array of tab IDs to move (first becomes the anchor tab)
+ * @returns Promise<chrome.windows.Window>
+ */
+export async function moveTabIdsToNewWindow(
+  tabIds: number[]
+): Promise<chrome.windows.Window> {
+  if (tabIds.length === 0) {
+    throw new Error("No tab IDs provided");
+  }
+  const newWindow = await chrome.windows.create({
+    tabId: tabIds[0],
+    focused: true,
+    type: "normal",
+  });
+  if (tabIds.length > 1 && newWindow.id) {
+    await moveTabsToWindow(tabIds.slice(1), newWindow.id);
+  }
+  return newWindow;
+}
+
+/**
  * moveSelectedTabsToNewWindow moves the selected tabs to a new window
  * If no tabs are selected, moves the current active tab
  * @returns Promise<chrome.windows.Window>
@@ -548,7 +570,6 @@ export async function moveSelectedTabsToNewWindow(): Promise<chrome.windows.Wind
       throw new Error("No tabs found to move");
     }
 
-    // Filter out tabs without IDs and get just the IDs
     const tabIds = tabsToMove
       .filter((tab) => tab.id !== undefined)
       .map((tab) => tab.id as number);
@@ -557,18 +578,7 @@ export async function moveSelectedTabsToNewWindow(): Promise<chrome.windows.Wind
       throw new Error("No valid tab IDs found");
     }
 
-    // Create a new window with the first tab, then move the rest
-    const newWindow = await chrome.windows.create({
-      tabId: tabIds[0],
-      focused: true,
-      type: "normal",
-    });
-
-    // If there are more tabs to move, move them to the new window
-    if (tabIds.length > 1 && newWindow.id) {
-      await moveTabsToWindow(tabIds.slice(1), newWindow.id);
-    }
-
+    const newWindow = await moveTabIdsToNewWindow(tabIds);
     console.log(`Moved ${tabIds.length} tab(s) to new window`);
     return newWindow;
   } catch (error) {
