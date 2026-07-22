@@ -7,32 +7,37 @@
 
 <body>
   <div id="actionList">
-    <div id="sortTabs" class="actionListItem">Sort Tabs (not to group)</div>
-    <div id="sortTabsByLastAccessed" class="actionListItem">Sort Tabs by Last Accessed</div>
-    <hr>
-    <div id="groupTabs" class="actionListItem">Group Tabs by Domain</div>
-    <div id="groupTabsIgnoreSubDomain" class="actionListItem">Group Tabs by Domain<br> (ignore sub-domain)</div>
-    <div id="groupTabsByLastAccessed" class="actionListItem">Group Tabs by Last Accessed</div>
+    <div class="sectionHeader">Sort</div>
+    <div id="sortTabs" class="actionListItem">Sort by URL</div>
+    <div id="sortTabsByLastAccessed" class="actionListItem">Sort by Last Accessed</div>
+
+    <div class="sectionHeader">Group</div>
+    <div id="groupTabs" class="actionListItem">Group by Domain</div>
+    <div id="groupTabsIgnoreSubDomain" class="actionListItem">Group by Domain (ignore subdomain)</div>
+    <div id="groupTabsByLastAccessed" class="actionListItem">Group by Last Accessed</div>
     <div id="ungroupTabs" class="actionListItem">Ungroup</div>
-    <hr>
-    <div id="removeDupTabs" class="actionListItem">Remove duplicated tabs</div>
-    <div id="removeDupTabsIgnoreParams" class="actionListItem">Remove duplicated tabs<br> (ignore URL parameters)</div>
-    <hr>
-    <div id="copyAllUrls" class="actionListItem">Copy All URLs to Clipboard</div>
-    <hr>
+
+    <div class="sectionHeader">Windows</div>
+    <div id="moveCurrentTabToNewWindow" class="actionListItem">Move Tab to New Window</div>
+    <div id="mergeWindows" class="actionListItem">Merge All Windows</div>
+
+    <div class="sectionHeader">Clipboard</div>
+    <div id="copyAllUrls" class="actionListItem">Copy All URLs</div>
+
+    <div class="sectionHeader">Close &amp; Restore</div>
+    <div id="removeDupTabs" class="actionListItem">Remove Duplicate Tabs</div>
+    <div id="removeDupTabsIgnoreParams" class="actionListItem">Remove Duplicate Tabs (ignore URL params)</div>
     <div id="closeCurrentTab" class="actionListItem">Close Current Tab</div>
     <div id="closeSelectedTabs" class="actionListItem">Close Selected Tabs</div>
-    <div id="moveCurrentTabToNewWindow" class="actionListItem">Move Tabs to New Window</div>
     <div id="restoreLastClosedTabs" class="actionListItem">Restore Last Closed Tabs</div>
     <div id="copyClosedTabUrls" class="actionListItem">Copy Closed Tab URLs</div>
     <div id="viewClosedGroups" class="actionListItem">Closed Windows ›</div>
     <div id="viewAutoClosedTabs" class="actionListItem">Auto-Closed Tabs ›</div>
-    <hr>
-    <div id="mergeWindows" class="actionListItem">Merge All Windows</div>
-    <hr>
-    <div id="canvasPiP" class="actionListItem">PiP Overlay (Canvas,IFrame,Video)</div>
-    <div id="interactivePiP" class="actionListItem">Interactive PiP (Experimental)</div>
-    <div id="elementPiP" class="actionListItem">Select Element PiP (New)</div>
+
+    <div class="sectionHeader">Picture-in-Picture</div>
+    <div id="canvasPiP" class="actionListItem">Media PiP Overlay</div>
+    <div id="interactivePiP" class="actionListItem">Interactive PiP</div>
+    <div id="elementPiP" class="actionListItem">Element PiP</div>
     <div id="fullPagePiP" class="actionListItem">Full Page PiP</div>
   </div>
   <script src="/js/vendor.js"></script>

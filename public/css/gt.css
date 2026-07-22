@@ -8,3 +8,18 @@
   cursor: pointer;
   background-color:#aeb0af;
 }
+.sectionHeader {
+  padding: 5px 5px 2px;
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #999;
+  pointer-events: none;
+  border-top: 1px solid #ddd;
+}
+.sectionHeader:first-child {
+  margin-top: 0;
+  border-top: none;
+}
