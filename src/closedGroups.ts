@@ -1,12 +1,21 @@
 function timeAgo(timestamp: number): string {
   const diff = Date.now() - timestamp;
+  if (diff < 60000) return "just now";
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
-  if (diff < 60000) return "just now";
   if (minutes < 60) return `${minutes}m ago`;
   if (hours < 24) return `${hours}h ago`;
   return `${days}d ago`;
+}
+
+/**
+ * chrome.sessions reports lastModified in seconds since the epoch, but some
+ * browser versions return milliseconds. Normalize to milliseconds.
+ */
+function normalizeSessionTimestamp(lastModified: number): number {
+  // Values before ~2001-09 in ms (1e12) can only be second-based timestamps
+  return lastModified < 1e12 ? lastModified * 1000 : lastModified;
 }
 
 type WindowSession = chrome.sessions.Session & {
@@ -43,7 +52,7 @@ function renderList(sessions: WindowSession[]): void {
   sessions.forEach((session) => {
     const tabs = session.window.tabs || [];
     const tabCount = tabs.length;
-    const timestamp = session.lastModified * 1000; // sessions API uses seconds
+    const timestamp = normalizeSessionTimestamp(session.lastModified);
 
     const recordEl = document.createElement("div");
     recordEl.className = "record";
@@ -51,6 +60,11 @@ function renderList(sessions: WindowSession[]): void {
     // Header row
     const headerEl = document.createElement("div");
     headerEl.className = "recordHeader";
+
+    const expandEl = document.createElement("span");
+    expandEl.className = "expandIcon";
+    expandEl.textContent = "▸";
+    headerEl.appendChild(expandEl);
 
     const iconEl = document.createElement("span");
     iconEl.className = "typeIcon";
@@ -80,10 +94,15 @@ function renderList(sessions: WindowSession[]): void {
     restoreBtn.textContent = "Restore";
     restoreBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
+      const sessionId = session.window.sessionId;
+      if (!sessionId) {
+        console.error("Session has no sessionId; cannot restore");
+        return;
+      }
       restoreBtn.disabled = true;
       restoreBtn.textContent = "…";
       try {
-        await chrome.sessions.restore(session.window.sessionId);
+        await chrome.sessions.restore(sessionId);
         // Refresh the list
         const updated = await getWindowSessions();
         renderList(updated);
@@ -135,7 +154,8 @@ function renderList(sessions: WindowSession[]): void {
     });
 
     headerEl.addEventListener("click", () => {
-      tabListEl.classList.toggle("expanded");
+      const expanded = tabListEl.classList.toggle("expanded");
+      expandEl.textContent = expanded ? "▾" : "▸";
     });
 
     recordEl.appendChild(tabListEl);

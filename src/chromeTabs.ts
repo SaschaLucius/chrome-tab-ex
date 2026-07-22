@@ -513,12 +513,11 @@ export async function copyAllUrlsToClipboard(): Promise<void> {
           tab.url &&
           (tab.url.startsWith("http://") || tab.url.startsWith("https://"))
       )
-      .map((tab) => tab.url!)
-      .join("\n");
+      .map((tab) => tab.url!);
 
-    if (urls) {
-      await navigator.clipboard.writeText(urls);
-      console.log(`Copied ${tabs.length} URLs to clipboard`);
+    if (urls.length > 0) {
+      await navigator.clipboard.writeText(urls.join("\n"));
+      console.log(`Copied ${urls.length} URLs to clipboard`);
     } else {
       console.log("No URLs found to copy");
     }

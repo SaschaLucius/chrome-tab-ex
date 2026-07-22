@@ -69,7 +69,7 @@ function groupTabs() {
    * action for "Group Tabs by Domain"
    */
   groupTabs.addEventListener("click", async () => {
-    sortTabsByDomainName();
+    await sortTabsByDomainName();
     const tabs = await ct.queryTabs(targetTabConditions);
     const [activeTab] = await ct.getActiveTab();
     const pinnedTabs = await ct.getPinnedTabs();
@@ -93,7 +93,7 @@ function groupTabs() {
    * action for "Group Tabs by Domain (ignore sub-domain)"
    */
   groupTabsIgnoreSubDomain.addEventListener("click", async () => {
-    sortTabsByDomainNameIgnoreSubDomain();
+    await sortTabsByDomainNameIgnoreSubDomain();
     const tabs = await ct.queryTabs(targetTabConditions);
     const [activeTab] = await ct.getActiveTab();
     const pinnedTabs = await ct.getPinnedTabs();
@@ -736,12 +736,12 @@ function groupTabs() {
       const groupID: number = await ct.groupTabs(domainMap[d]);
       const collapsed: boolean = !domainMap[d].includes(<number>activeTab.id);
       const colorIdx = groupedCnt % ctg.groupColors.length;
-      ctg.updateTabGroup(groupID, {
+      await ctg.updateTabGroup(groupID, {
         collapsed: collapsed,
         title: d,
         color: ctg.groupColors[colorIdx],
       });
-      ctg.moveGroup(groupID, pinnedTabs.length);
+      await ctg.moveGroup(groupID, pinnedTabs.length);
       groupedCnt++;
     }
   };
@@ -892,12 +892,12 @@ function groupTabs() {
           );
           const colorIdx = groupedCnt % ctg.groupColors.length;
 
-          ctg.updateTabGroup(groupID, {
+          await ctg.updateTabGroup(groupID, {
             collapsed: collapsed,
             title: groupName,
             color: ctg.groupColors[colorIdx],
           });
-          ctg.moveGroup(groupID, pinnedTabs.length);
+          await ctg.moveGroup(groupID, pinnedTabs.length);
           groupedCnt++;
         }
       }

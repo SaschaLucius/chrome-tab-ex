@@ -213,6 +213,7 @@ chrome.runtime.onStartup.addListener(async () => {
 });
 
 chrome.runtime.onInstalled.addListener(async () => {
+  createContextMenu();
   await initializeExistingTabs();
   setupAlarm();
   await updateBadge();
@@ -241,14 +242,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
   if (request.action === "restoreAutoClosedTab") {
-    const { url, index } = request;
+    const { url, closedAt } = request;
     chrome.tabs
       .create({ url, active: true })
       .then(async () => {
-        // Remove from auto-closed list
+        // Remove from auto-closed list (match by identity, as the stored
+        // list may have changed since the page was loaded)
         const tabs = await getAutoClosedTabs();
-        if (index >= 0 && index < tabs.length) {
-          tabs.splice(index, 1);
+        const idx = tabs.findIndex(
+          (t) => t.url === url && t.closedAt === closedAt
+        );
+        if (idx >= 0) {
+          tabs.splice(idx, 1);
           await saveAutoClosedTabs(tabs);
         }
         sendResponse({ ok: true });
@@ -272,21 +277,21 @@ const CONTEXT_MENU_ID = "groupTabsByDomain";
 const CONTEXT_MENU_MOVE_ID = "moveTabToNewWindow";
 
 function createContextMenu(): void {
-  chrome.contextMenus.create({
-    id: CONTEXT_MENU_ID,
-    title: "Group all tabs from this domain",
-    contexts: ["page"],
-  });
-  chrome.contextMenus.create({
-    id: CONTEXT_MENU_MOVE_ID,
-    title: "Move this tab to a new window",
-    contexts: ["page"],
+  // Remove any existing menus first (create() throws on duplicate ids,
+  // e.g. after an extension update)
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: CONTEXT_MENU_ID,
+      title: "Group all tabs from this domain",
+      contexts: ["page"],
+    });
+    chrome.contextMenus.create({
+      id: CONTEXT_MENU_MOVE_ID,
+      title: "Move this tab to a new window",
+      contexts: ["page"],
+    });
   });
 }
-
-chrome.runtime.onInstalled.addListener(() => {
-  createContextMenu();
-});
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === CONTEXT_MENU_MOVE_ID) {

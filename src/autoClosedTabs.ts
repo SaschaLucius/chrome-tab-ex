@@ -44,17 +44,17 @@ function renderTabs(tabs: AutoClosedTab[]): void {
     tabs.length !== allTabs.length ? ` (filtered from ${allTabs.length})` : ""
   }`;
 
-  tabs.forEach((tab, filteredIdx) => {
-    // Find original index in allTabs for restore
-    const originalIdx = allTabs.indexOf(tab);
-
+  tabs.forEach((tab) => {
     const item = document.createElement("div");
     item.className = "tab-item";
 
     const favicon = document.createElement("img");
     favicon.className = "tab-favicon";
     favicon.src = tab.favIconUrl || "images/gt_icon16.png";
-    favicon.onerror = () => (favicon.src = "images/gt_icon16.png");
+    favicon.onerror = () => {
+      favicon.onerror = null;
+      favicon.src = "images/gt_icon16.png";
+    };
     item.appendChild(favicon);
 
     const info = document.createElement("div");
@@ -87,9 +87,15 @@ function renderTabs(tabs: AutoClosedTab[]): void {
       restoreBtn.disabled = true;
       restoreBtn.textContent = "...";
       chrome.runtime.sendMessage(
-        { action: "restoreAutoClosedTab", url: tab.url, index: originalIdx },
-        () => {
-          allTabs.splice(originalIdx, 1);
+        { action: "restoreAutoClosedTab", url: tab.url, closedAt: tab.closedAt },
+        (response) => {
+          if (chrome.runtime.lastError || response?.error) {
+            restoreBtn.disabled = false;
+            restoreBtn.textContent = "Restore";
+            return;
+          }
+          const idx = allTabs.indexOf(tab);
+          if (idx >= 0) allTabs.splice(idx, 1);
           filterAndRender();
         }
       );
