@@ -87,7 +87,11 @@ function renderTabs(tabs: AutoClosedTab[]): void {
       restoreBtn.disabled = true;
       restoreBtn.textContent = "...";
       chrome.runtime.sendMessage(
-        { action: "restoreAutoClosedTab", url: tab.url, closedAt: tab.closedAt },
+        {
+          action: "restoreAutoClosedTab",
+          url: tab.url,
+          closedAt: tab.closedAt,
+        },
         (response) => {
           if (chrome.runtime.lastError || response?.error) {
             restoreBtn.disabled = false;
