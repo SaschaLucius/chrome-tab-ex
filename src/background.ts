@@ -250,7 +250,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         // list may have changed since the page was loaded)
         const tabs = await getAutoClosedTabs();
         const idx = tabs.findIndex(
-          (t) => t.url === url && t.closedAt === closedAt
+          (t) => t.url === url && t.closedAt === closedAt,
         );
         if (idx >= 0) {
           tabs.splice(idx, 1);

@@ -101,7 +101,7 @@ function renderTabs(tabs: AutoClosedTab[]): void {
           const idx = allTabs.indexOf(tab);
           if (idx >= 0) allTabs.splice(idx, 1);
           filterAndRender();
-        }
+        },
       );
     });
     item.appendChild(restoreBtn);
@@ -119,7 +119,7 @@ function filterAndRender(): void {
   const filtered = allTabs.filter(
     (tab) =>
       tab.title.toLowerCase().includes(query) ||
-      tab.url.toLowerCase().includes(query)
+      tab.url.toLowerCase().includes(query),
   );
   renderTabs(filtered);
 }

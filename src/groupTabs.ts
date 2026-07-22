@@ -212,10 +212,10 @@ function groupTabs() {
                             second || {
                               ok: false,
                               reason: "no-response-after-inject",
-                            }
+                            },
                           );
                         }
-                      }
+                      },
                     );
                   }, 120);
                 } catch (injErr) {
@@ -314,10 +314,10 @@ function groupTabs() {
                               second || {
                                 ok: false,
                                 reason: "no-response-after-inject",
-                              }
+                              },
                             );
                           }
-                        }
+                        },
                       );
                     }, 120);
                   } catch (injErr) {
@@ -333,7 +333,7 @@ function groupTabs() {
               return;
             }
             resolve(resp);
-          }
+          },
         );
       });
       if (!response || !response.ok) {
@@ -414,10 +414,10 @@ function groupTabs() {
                               second || {
                                 ok: false,
                                 reason: "no-response-after-inject",
-                              }
+                              },
                             );
                           }
-                        }
+                        },
                       );
                     }, 120);
                   } catch (injErr) {
@@ -433,7 +433,7 @@ function groupTabs() {
               return;
             }
             resolve(resp);
-          }
+          },
         );
       });
       if (!response || !response.ok) {
@@ -514,10 +514,10 @@ function groupTabs() {
                               second || {
                                 ok: false,
                                 reason: "no-response-after-inject",
-                              }
+                              },
                             );
                           }
-                        }
+                        },
                       );
                     }, 120);
                   } catch (injErr) {
@@ -533,7 +533,7 @@ function groupTabs() {
               return;
             }
             resolve(resp);
-          }
+          },
         );
       });
       if (!response || !response.ok) {
@@ -699,26 +699,26 @@ function groupTabs() {
   const sortTabsByURL = async () => {
     const tabs = await ct.queryTabs(targetTabConditions);
     const sorted = ct.sortTabsByURL(tabs);
-    ct.moveTabs(sorted);
+    await ct.moveTabs(sorted);
   };
 
   const sortTabsByDomainName = async () => {
     const tabs = await ct.queryTabs(targetTabConditions);
     const sorted = ct.sortTabsByDomainName(tabs);
-    ct.moveTabs(sorted);
+    await ct.moveTabs(sorted);
   };
 
   const sortTabsByDomainNameIgnoreSubDomain = async () => {
     const tabs = await ct.queryTabs(targetTabConditions);
     const sorted = ct.sortTabsByDomainNameIgnoreSubDomain(tabs);
-    ct.moveTabs(sorted);
+    await ct.moveTabs(sorted);
   };
 
   const runGroupTabs = async (
     domains: string[],
     domainMap: { [key: string]: number[] },
     pinnedTabs: chrome.tabs.Tab[],
-    activeTab: chrome.tabs.Tab
+    activeTab: chrome.tabs.Tab,
   ) => {
     domains.sort((a, b) => {
       return a < b ? 1 : -1;
@@ -751,7 +751,7 @@ function groupTabs() {
       const tabs = await ct.queryTabs(targetTabConditions);
       const tabActivityData = await ct.getTabActivityData();
       const sorted = ct.sortTabsByLastAccessed(tabs, tabActivityData);
-      ct.moveTabs(sorted);
+      await ct.moveTabs(sorted);
     } catch (error) {
       console.error("Error sorting tabs by last accessed:", error);
     }
@@ -816,16 +816,16 @@ function groupTabs() {
             const nowDate = new Date(
               now.getFullYear(),
               now.getMonth(),
-              now.getDate()
+              now.getDate(),
             );
             const tabDateOnly = new Date(
               tabDate.getFullYear(),
               tabDate.getMonth(),
-              tabDate.getDate()
+              tabDate.getDate(),
             );
             const daysDiff = Math.floor(
               (nowDate.getTime() - tabDateOnly.getTime()) /
-                (24 * 60 * 60 * 1000)
+                (24 * 60 * 60 * 1000),
             );
 
             if (daysDiff === 1) {
@@ -882,13 +882,13 @@ function groupTabs() {
       for (const groupName of groupOrder) {
         if (timeGroups[groupName] && timeGroups[groupName].length > 0) {
           console.log(
-            `Processing group: ${groupName} with ${timeGroups[groupName].length} tabs`
+            `Processing group: ${groupName} with ${timeGroups[groupName].length} tabs`,
           );
 
           // Create group even for single tabs
           const groupID: number = await ct.groupTabs(timeGroups[groupName]);
           const collapsed: boolean = !timeGroups[groupName].includes(
-            <number>activeTab.id
+            <number>activeTab.id,
           );
           const colorIdx = groupedCnt % ctg.groupColors.length;
 
@@ -916,7 +916,7 @@ function groupTabs() {
    */
   const showDuplicateTabsNotification = (
     closedCount: number,
-    ignoreParams: boolean = false
+    ignoreParams: boolean = false,
   ) => {
     const paramsSuffix = ignoreParams ? " (ignoring URL parameters)" : "";
 
@@ -969,7 +969,7 @@ function groupTabs() {
     // Use the common close function with history tracking
     const closedCount = await ct.closeTabsWithHistory(
       tabsToClose,
-      "removeDuplicates"
+      "removeDuplicates",
     );
 
     // Show notification with count
@@ -1008,7 +1008,7 @@ function groupTabs() {
     // Use the common close function with history tracking
     const closedCount = await ct.closeTabsWithHistory(
       tabsToClose,
-      "removeDuplicatesIgnoreParams"
+      "removeDuplicatesIgnoreParams",
     );
 
     // Show notification with count
