@@ -1,7 +1,7 @@
 import { getDomainName, getDomainNameIgnoreSubDomain } from "./url";
 
 export function queryTabs(
-  options: chrome.tabs.QueryInfo,
+  options: chrome.tabs.QueryInfo
 ): Promise<chrome.tabs.Tab[]> {
   return chrome.tabs.query(options);
 }
@@ -46,7 +46,7 @@ export function getPinnedTabs(): Promise<chrome.tabs.Tab[]> {
  */
 export function sortTabsByLastAccessed(
   tabs: chrome.tabs.Tab[],
-  tabActivityData: { [tabId: string]: number },
+  tabActivityData: { [tabId: string]: number }
 ): chrome.tabs.Tab[] {
   tabs.sort((a, b) => {
     const timestampA = a.id ? tabActivityData[a.id.toString()] || 0 : 0;
@@ -84,7 +84,7 @@ export function sortTabsByURL(tabs: chrome.tabs.Tab[]): chrome.tabs.Tab[] {
  * @returns
  */
 export function sortTabsByDomainName(
-  tabs: chrome.tabs.Tab[],
+  tabs: chrome.tabs.Tab[]
 ): chrome.tabs.Tab[] {
   tabs.sort((a, b) => {
     const groupTitleA =
@@ -108,7 +108,7 @@ export function sortTabsByDomainName(
  * @returns
  */
 export function sortTabsByDomainNameIgnoreSubDomain(
-  tabs: chrome.tabs.Tab[],
+  tabs: chrome.tabs.Tab[]
 ): chrome.tabs.Tab[] {
   tabs.sort((a, b) => {
     const groupTitleA =
@@ -195,7 +195,7 @@ async function getClosedTabsHistory(): Promise<ClosedTabSession[]> {
  * Save closed tabs history to storage
  */
 async function saveClosedTabsHistory(
-  history: ClosedTabSession[],
+  history: ClosedTabSession[]
 ): Promise<void> {
   // Keep only the most recent sessions
   const trimmedHistory = history.slice(0, MAX_CLOSED_SESSIONS);
@@ -219,11 +219,11 @@ async function addClosedTabSession(session: ClosedTabSession): Promise<void> {
  */
 export async function closeTabsWithHistory(
   tabs: chrome.tabs.Tab | chrome.tabs.Tab[],
-  action: string,
+  action: string
 ): Promise<number> {
   const tabsArray = Array.isArray(tabs) ? tabs : [tabs];
   const validTabs = tabsArray.filter(
-    (tab) => tab.id !== undefined && tab.url !== undefined,
+    (tab) => tab.id !== undefined && tab.url !== undefined
   );
 
   if (validTabs.length === 0) {
@@ -310,7 +310,7 @@ export async function restoreLastClosedTabs(): Promise<number> {
     await saveClosedTabsHistory(history);
 
     console.log(
-      `Restored ${restoredCount} tab(s) from action: ${lastSession.action}`,
+      `Restored ${restoredCount} tab(s) from action: ${lastSession.action}`
     );
     return restoredCount;
   } catch (error) {
@@ -349,7 +349,7 @@ export async function copyClosedTabUrls(): Promise<number> {
     await navigator.clipboard.writeText(urls);
 
     console.log(
-      `Copied ${lastSession.tabs.length} closed tab URL(s) from action: ${lastSession.action}`,
+      `Copied ${lastSession.tabs.length} closed tab URL(s) from action: ${lastSession.action}`
     );
     return lastSession.tabs.length;
   } catch (error) {
@@ -382,7 +382,7 @@ export function getCurrentWindow(): Promise<chrome.windows.Window> {
  */
 export function moveTabsToWindow(
   tabIds: number[],
-  windowId: number,
+  windowId: number
 ): Promise<chrome.tabs.Tab[]> {
   return chrome.tabs.move(tabIds, { windowId: windowId, index: -1 });
 }
@@ -420,7 +420,7 @@ export async function mergeAllWindows(): Promise<void> {
 
     // Filter out the current window
     const otherWindows = allWindows.filter(
-      (window) => window.id !== currentWindow.id,
+      (window) => window.id !== currentWindow.id
     );
 
     if (otherWindows.length === 0) {
@@ -470,7 +470,7 @@ export async function mergeAllWindows(): Promise<void> {
 
         if (hasNonPinnedTabs) {
           console.log(
-            `Window ${windowId} still has non-pinned tabs, skipping closure`,
+            `Window ${windowId} still has non-pinned tabs, skipping closure`
           );
           continue;
         }
@@ -489,7 +489,7 @@ export async function mergeAllWindows(): Promise<void> {
     }
 
     console.log(
-      `Merged ${tabsToMove.length} tabs from ${windowsToClose.length} windows (${successfullyClosedCount} windows closed successfully)`,
+      `Merged ${tabsToMove.length} tabs from ${windowsToClose.length} windows (${successfullyClosedCount} windows closed successfully)`
     );
   } catch (error) {
     console.error("Error merging windows:", error);
@@ -511,7 +511,7 @@ export async function copyAllUrlsToClipboard(): Promise<void> {
       .filter(
         (tab) =>
           tab.url &&
-          (tab.url.startsWith("http://") || tab.url.startsWith("https://")),
+          (tab.url.startsWith("http://") || tab.url.startsWith("https://"))
       )
       .map((tab) => tab.url!);
 
@@ -533,7 +533,7 @@ export async function copyAllUrlsToClipboard(): Promise<void> {
  * @returns Promise<chrome.windows.Window>
  */
 export async function moveTabIdsToNewWindow(
-  tabIds: number[],
+  tabIds: number[]
 ): Promise<chrome.windows.Window> {
   if (tabIds.length === 0) {
     throw new Error("No tab IDs provided");
@@ -630,7 +630,7 @@ export async function closeSelectedTabs(): Promise<number> {
     // Use the common close function with history tracking
     const closedCount = await closeTabsWithHistory(
       tabsToClose,
-      "closeSelected",
+      "closeSelected"
     );
     return closedCount;
   } catch (error) {

@@ -29,10 +29,10 @@ function getWindowSessions(): Promise<WindowSession[]> {
       (sessions) => {
         resolve(
           sessions.filter(
-            (s): s is WindowSession => !!s.window && !!s.window.tabs?.length,
-          ),
+            (s): s is WindowSession => !!s.window && !!s.window.tabs?.length
+          )
         );
-      },
+      }
     );
   });
 }
